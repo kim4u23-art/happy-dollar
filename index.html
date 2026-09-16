@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Happy Dollar · 달러자산 만들기</title>
+
+<!-- PWA / 앱 설치 지원 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B2140">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Happy Dollar">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&family=Noto+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --navy:#0B2140;
+  --navy-2:#122A4C;
+  --navy-3:#0E1F38;
+  --green:#1E5631;
+  --green-2:#153C22;
+  --green-light:#3E8A57;
+  --gold:#C6A15B;
+  --gold-light:#E7D4A3;
+  --parchment:#F3EFE3;
+  --paper:#FBF9F1;
+  --crimson:#A22332;
+  --crimson-2:#7E1A26;
+  --ink:#1B2430;
+  --ink-soft:#5B6472;
+  --line:rgba(27,36,48,.14);
+  --line-gold:rgba(198,161,91,.45);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  font-family:'Noto Sans KR',sans-serif;
+  color:var(--ink);
+  background:var(--parchment);
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:'IBM Plex Mono',monospace;}
+h1,h2,h3,.serif{font-family:'Noto Serif KR',serif;}
+
+/* ---------- ledger paper texture ---------- */
+.ledger-bg{
+  background-color:var(--paper);
+  background-image:
+    repeating-linear-gradient(180deg, transparent 0 39px, var(--line) 39px 40px);
+}
+
+/* ---------- auth gate ---------- */
+.auth-gate{
+  position:fixed; inset:0; z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(198,161,91,.18), transparent 55%),
+    radial-gradient(ellipse at 90% 110%, rgba(30,86,49,.35), transparent 55%),
+    linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 60%, #081324 100%);
+}
+.auth-card{
+  width:100%; max-width:380px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(198,161,91,.35);
+  border-radius:16px;
+  padding:26px 24px 22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+}
+.auth-brand{display:flex; align-items:center; gap:12px; margin-bottom:20px;}
+.auth-tabs{display:flex; gap:8px; margin-bottom:18px;}
+.auth-tab{
+  flex:1; text-align:center; padding:9px 6px; border-radius:8px; cursor:pointer;
+  font-size:13px; font-weight:700; color:#B9C3D6;
+  border:1.5px solid rgba(198,161,91,.35);
+}
+.auth-tab.active{background:var(--gold); color:#3a2c0e; border-color:var(--gold);}
+.auth-gate .field label{color:#DCE2ED;}
+.auth-gate .field input{background:rgba(255,255,255,.92);}
+.auth-msg{font-size:12.5px; margin-top:12px; min-height:16px; color:#F2C9A0; line-height:1.6;}
+.auth-msg.success{color:#8FD9A8;}
+.auth-footnote{font-size:11px; color:#8393AA; margin-top:18px; line-height:1.6; text-align:center;}
+.auth-code-display{
+  text-align:center; font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700;
+  letter-spacing:8px; color:var(--gold-light);
+  background:rgba(0,0,0,.25); border:1px dashed rgba(198,161,91,.5); border-radius:10px;
+  padding:14px 0; margin:14px 0;
+}
+
+/* ---------- 계약자 정보 확인서 (공통 문서 스타일) ---------- */
+.doc-card{max-width:100%;}
+.doc-title{text-align:center; margin-bottom:14px; padding-bottom:14px; border-bottom:2px solid var(--navy-3);}
+.doc-title-main{font-family:'Noto Serif KR',serif; font-size:20px; font-weight:900; color:var(--navy-3);}
+.doc-disclaimer{font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin:0 0 18px; background:rgba(198,161,91,.07); border:1px solid var(--line-gold); border-radius:8px; padding:12px 14px;}
+.doc-disclaimer.small{font-size:11px; margin:0 0 10px; background:transparent; border:none; padding:0;}
+.doc-disclaimer.glossary{margin-top:6px; margin-bottom:18px;}
+.doc-meta-row{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:6px;}
+.doc-meta-row .field{min-width:140px; margin-bottom:12px;}
+.date-inputs{display:flex; align-items:center; gap:4px;}
+.date-inputs input{width:56px; padding:11px 6px; text-align:center;}
+.date-inputs span{font-size:12.5px; color:var(--ink-soft); flex:none;}
+.vulnerable-box{background:rgba(11,33,64,.04); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:20px;}
+.vulnerable-label{font-weight:700; font-size:13.5px; color:var(--navy-3); margin-bottom:8px;}
+.vulnerable-note{font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin:8px 0 0;}
+.inline-check{display:inline-flex; align-items:center; gap:4px; font-weight:700; color:var(--navy-3);}
+.doc-q{margin:18px 0; padding-top:14px; border-top:1px dashed var(--line);}
+.doc-q .q-text{font-size:13.5px; font-weight:700; color:var(--navy-3); margin:0 0 10px; line-height:1.6;}
+.doc-q .q-note{font-size:11px; color:var(--ink-soft); font-weight:500; margin-left:4px;}
+.opt-row{display:flex; flex-wrap:wrap; gap:8px 14px;}
+.opt-row label{
+  display:flex; align-items:flex-start; gap:6px; font-size:13px; color:var(--ink);
+  cursor:pointer; padding:6px 10px; border-radius:7px; border:1px solid var(--line);
+  background:#fff; line-height:1.5;
+}
+.opt-row label:has(input:checked){border-color:var(--gold); background:rgba(198,161,91,.12); font-weight:700;}
+.consent-box{margin:20px 0; padding:14px 16px; border:1px solid rgba(162,35,50,.18); background:rgba(162,35,50,.03); border-radius:8px;}
+.consent-title{font-weight:700; font-size:13.5px; color:var(--crimson); margin-bottom:8px;}
+.agree-check{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:var(--navy-3); cursor:pointer;}
+.field-missing{outline:2px solid var(--crimson) !important; border-radius:6px;}
+
+/* ---------- 외화적합성진단서 (legacy, print) ---------- */
+.doc-title{text-align:center; margin-bottom:22px; padding-bottom:16px; border-bottom:2px solid var(--navy-3);}
+.doc-title-main{font-family:'Noto Serif KR',serif; font-size:21px; font-weight:900; color:var(--navy-3);}
+.doc-title-sub{font-size:11.5px; color:var(--ink-soft); margin-top:4px; letter-spacing:.5px;}
+.doc-meta{margin-bottom:0;}
+.doc-section{margin:22px 0; padding-top:16px; border-top:1px dashed var(--line);}
+.doc-section h4{font-size:14px; margin:0 0 12px; color:var(--navy-3); font-weight:700;}
+.doc-section h4 .req{color:var(--crimson); font-size:11.5px; font-weight:700;}
+.radio-row{display:flex; flex-wrap:wrap; gap:10px 18px;}
+.radio-row label{
+  display:flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink);
+  cursor:pointer; padding:6px 10px; border-radius:7px; border:1px solid var(--line);
+  background:#fff;
+}
+.radio-row label:has(input:checked){border-color:var(--gold); background:rgba(198,161,91,.12); font-weight:700;}
+.doc-section.risk{background:rgba(162,35,50,.04); border:1px solid rgba(162,35,50,.18); border-radius:10px; padding:16px; border-top:1px solid rgba(162,35,50,.18);}
+.risk-item{margin-bottom:16px;}
+.risk-item:last-child{margin-bottom:0;}
+.risk-item p{font-size:13px; color:var(--ink); line-height:1.6; margin:0 0 8px;}
+.sign-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:560px){.sign-row{grid-template-columns:1fr;}}
+
+/* ---------- print (PDF 저장) ---------- */
+@media print{
+  body.print-suitability .topbar,
+  body.print-suitability .tabs,
+  body.print-suitability #authGate,
+  body.print-suitability .no-print{ display:none !important; }
+  body.print-suitability #appRoot,
+  body.print-suitability #pageWrap,
+  body.print-suitability .page{ padding:0 !important; margin:0 !important; background:#fff !important; }
+  body.print-suitability .screen{ display:none !important; }
+  body.print-suitability .screen.print-active{ display:block !important; }
+  body.print-suitability .screen.print-active .shell{ max-width:100%; padding:0; margin:0; }
+  body.print-suitability .screen.print-active .section-head{ display:none; }
+  body.print-suitability .card{ border:none; box-shadow:none; padding:0; }
+  body.print-suitability .field input,
+  body.print-suitability .date-inputs input{ border:none; border-bottom:1px solid #999; border-radius:0; padding:4px 2px; background:transparent; }
+  body.print-suitability .opt-row label,
+  body.print-suitability .radio-row label{ border:1px solid #ccc; background:#fff; }
+  body.print-suitability .doc-disclaimer{ background:transparent; border:1px solid #ccc; }
+  body.print-suitability .vulnerable-box{ background:transparent; border:1px solid #ccc; }
+  body.print-suitability .consent-box{ background:transparent; }
+  body.print-suitability{ background:#fff !important; }
+}
+
+/* ---------- 부록첨부: STORYBOOK ---------- */
+.storybook-progress{display:flex; align-items:center; gap:12px; margin-bottom:20px;}
+.storybook-progress-bar{flex:1; height:8px; border-radius:4px; background:var(--line); overflow:hidden;}
+.storybook-progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--green),var(--gold)); transition:width .35s ease;}
+.storybook-progress span{font-size:12px; font-weight:700; color:var(--ink-soft); white-space:nowrap;}
+.storybook-layout{display:flex; gap:20px; align-items:flex-start;}
+@media (max-width:760px){.storybook-layout{flex-direction:column;}}
+.storybook-nav{width:230px; flex:none; display:flex; flex-direction:column; gap:6px;}
+@media (max-width:760px){.storybook-nav{width:100%; flex-direction:row; overflow-x:auto; padding-bottom:4px;}}
+.storybook-nav-item{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  padding:10px 12px; border-radius:9px; cursor:pointer;
+  border:1px solid var(--line); background:#fff; font-size:12.5px; color:var(--ink);
+  transition:all .15s ease;
+}
+@media (max-width:760px){.storybook-nav-item{flex:none; min-width:170px;}}
+.storybook-nav-item:hover{border-color:var(--gold);}
+.storybook-nav-item.active{background:var(--navy); border-color:var(--navy); color:#fff;}
+.storybook-nav-item .snav-tag{display:block; font-size:10px; font-weight:800; letter-spacing:.5px; opacity:.65; margin-bottom:2px;}
+.storybook-nav-item .snav-done{color:var(--green-light); font-weight:900; flex:none;}
+.storybook-nav-item.active .snav-done{color:#8FD9A8;}
+.storybook-content{flex:1; padding:30px; min-width:0;}
+.sb-tag{font-size:12px; letter-spacing:2.5px; color:var(--gold); font-weight:800; text-transform:uppercase;}
+.sb-title{font-family:'Noto Serif KR',serif; font-size:23px; font-weight:900; color:var(--navy-3); margin:8px 0 20px; line-height:1.4;}
+.sb-p{font-size:14px; line-height:1.85; color:var(--ink); margin:0 0 14px;}
+.sb-quote{font-size:15px; font-weight:700; color:var(--navy-2); border-left:3px solid var(--gold); padding:10px 16px; margin:18px 0; background:rgba(198,161,91,.08); border-radius:0 8px 8px 0;}
+.sb-tags{font-size:12.5px; color:var(--ink-soft); font-weight:700; margin:18px 0; letter-spacing:.3px;}
+.sb-flow{text-align:center; font-family:'Noto Serif KR',serif; font-weight:900; font-size:17px; color:var(--navy-3); margin:24px 0; padding:16px; background:rgba(11,33,64,.04); border-radius:10px;}
+.sb-footnote{font-size:11px; color:var(--ink-soft); margin-top:16px; line-height:1.6;}
+.sb-closing-box{margin-top:24px; padding:20px 22px; border-radius:12px; background:linear-gradient(160deg,#C43647,var(--crimson) 55%,var(--crimson-2)); color:#fff;}
+.sb-closing-label{display:inline-block; background:rgba(255,255,255,.22); border-radius:999px; padding:4px 13px; font-size:11px; font-weight:800; margin-bottom:10px; letter-spacing:.5px;}
+.sb-closing-text{font-family:'Noto Serif KR',serif; font-size:15.5px; line-height:1.75; font-weight:700;}
+.sb-sales3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0;}
+@media (max-width:640px){.sb-sales3{grid-template-columns:1fr;}}
+.sb-sales3-item{border:1px solid var(--line); border-radius:10px; padding:18px 14px; text-align:center;}
+.sb-sales3-item .n{font-family:'IBM Plex Mono',monospace; font-weight:800; color:var(--gold); font-size:13px;}
+.sb-sales3-item .label{font-weight:800; margin:6px 0; color:var(--navy-3); font-size:14.5px;}
+.sb-sales3-item .q{font-size:12.5px; color:var(--ink-soft); margin-bottom:8px; line-height:1.5;}
+.sb-sales3-item .to{font-size:11.5px; font-weight:700; color:var(--crimson);}
+.sb-portfolio{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0;}
+@media (max-width:640px){.sb-portfolio{grid-template-columns:1fr;}}
+.sb-portfolio-item{border-radius:10px; padding:18px 14px; color:#fff; text-align:center;}
+.sb-portfolio-item .plabel{font-weight:900; letter-spacing:1px; font-size:13px;}
+.sb-portfolio-item .pproduct{font-family:'Noto Serif KR',serif; font-weight:800; margin:8px 0 4px; font-size:14.5px;}
+.sb-portfolio-item .prole{font-size:12px; opacity:.85;}
+
+/* ---------- 달러 니즈 환기 ---------- */
+.needs-card{padding:28px 24px;}
+.needs-heart{font-size:13px; font-weight:800; color:var(--crimson); margin-bottom:8px;}
+.needs-title{font-family:'Noto Serif KR',serif; font-size:20px; font-weight:900; color:var(--navy-3); margin:0 0 10px;}
+.needs-sub{font-size:13px; color:var(--ink-soft); line-height:1.7; margin:0 0 20px;}
+.needs-round{margin-bottom:20px;}
+.needs-round-label{display:inline-block; background:var(--navy); color:#fff; font-size:12px; font-weight:700; padding:4px 12px; border-radius:6px; margin-bottom:10px;}
+.needs-vs-row{display:flex; align-items:center; gap:12px;}
+.needs-vs-box{
+  flex:1; text-align:center; padding:18px 10px; border-radius:12px; cursor:pointer;
+  border:2px solid var(--line); background:#fff; transition:all .15s ease;
+}
+.needs-vs-box:hover{border-color:var(--gold); transform:translateY(-2px);}
+.needs-vs-box.selected{border-color:var(--green); background:rgba(30,86,49,.08); box-shadow:0 0 0 3px rgba(30,86,49,.15);}
+.nvs-icon{font-size:28px; margin-bottom:6px;}
+.nvs-name{font-size:12.5px; font-weight:700; color:var(--navy-3);}
+.nvs-amt{font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:800; color:var(--crimson); margin-top:4px;}
+.needs-vs-divider{flex:none; font-weight:900; color:var(--gold); font-size:13px;}
+.needs-fx-note{font-size:11px; color:var(--ink-soft); text-align:center; margin:16px 0 4px;}
+.needs-punchline{
+  text-align:center; margin-top:16px; padding:14px; border-radius:10px;
+  background:rgba(198,161,91,.12); color:var(--navy-3); font-weight:800; font-size:14px;
+}
+.needs-people-row{display:flex; align-items:center; gap:12px; margin:18px 0 10px;}
+.needs-people-icon{font-size:34px;}
+.needs-people-caption{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+.needs-bubble{
+  padding:14px 18px; border-radius:14px; color:#fff; font-weight:700; font-size:14px; line-height:1.6; margin-bottom:8px;
+}
+.needs-bubble.blue{background:#2C6FBB;}
+.needs-bubble.red{background:var(--crimson);}
+.needs-chart-box{background:rgba(11,33,64,.03); border-radius:10px; padding:18px; margin-top:14px;}
+.needs-chart-title{text-align:center; font-weight:800; font-size:13px; color:var(--navy-3); background:var(--navy); color:#fff; padding:8px; border-radius:6px; margin-bottom:14px;}
+.needs-chart-svg{width:100%; height:auto; display:block;}
+.needs-chart-desc{text-align:center; font-size:13px; color:var(--ink); margin:10px 0 0;}
+.needs-timeline{display:flex; justify-content:space-between; gap:6px; margin:20px 0; flex-wrap:wrap;}
+.needs-timeline-item{flex:1; min-width:72px; text-align:center;}
+.nti-icon{font-size:24px;}
+.nti-label{font-size:10.5px; font-weight:700; color:var(--navy-3); margin-top:4px; line-height:1.3;}
+.nti-year{font-size:10px; color:var(--ink-soft); margin-top:2px;}
+.needs-banner{background:#2C6FBB; color:#fff; text-align:center; font-weight:700; font-size:13.5px; padding:14px; border-radius:10px; margin:16px 0;}
+.needs-green-box{border:2px solid var(--green-light); border-radius:14px; padding:22px; margin-top:16px; position:relative;}
+.needs-green-pill{position:absolute; top:-12px; right:16px; background:var(--crimson); color:#fff; font-size:11px; font-weight:800; padding:5px 14px; border-radius:999px;}
+.needs-green-q{font-family:'Noto Serif KR',serif; font-weight:900; font-size:15.5px; color:var(--navy-3); margin:6px 0 14px; line-height:1.6;}
+.needs-green-p{font-size:12.5px; color:var(--ink-soft); line-height:1.8; margin:0 0 12px;}
+.needs-green-bold{font-weight:800; color:var(--crimson); font-size:14px; margin:0 0 12px;}
+.needs-green-quote{font-size:12.5px; color:var(--ink); font-style:italic; margin:0;}
+
+/* ---------- RP연습 ---------- */
+.rp-card{text-align:center; padding:44px 28px; max-width:560px; margin:0 auto;}
+.rp-icon{font-size:44px; margin-bottom:14px;}
+.rp-title{font-family:'Noto Serif KR',serif; font-size:19px; color:var(--navy-3); margin:0 0 16px; font-weight:800;}
+.rp-desc{font-size:13.5px; color:var(--ink-soft); line-height:1.8; margin:0 0 28px;}
+.rp-desc b{color:var(--navy-3);}
+.rp-btn{width:100%; font-size:15.5px; padding:16px 22px;}
+.rp-note{font-size:11.5px; color:var(--ink-soft); margin-top:14px;}
+
+/* ---------- header / nav ---------- */
+.topbar{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:env(safe-area-inset-top,0) 20px 0;
+  height:calc(64px + env(safe-area-inset-top,0px));
+  background:linear-gradient(180deg,#D9BC7C,#C6A15B 55%,#B08B44);
+  border-bottom:2px solid var(--crimson-2);
+  box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+.brand{display:flex; align-items:center; gap:10px; cursor:pointer;}
+.brand-mark{
+  width:34px; height:34px; border-radius:50%;
+  background:radial-gradient(circle at 32% 28%, #3E8A57, var(--green) 60%, var(--green-2) 100%);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gold-light); font-weight:900; font-family:'Noto Serif KR',serif; font-size:16px;
+  border:2px solid rgba(255,255,255,.6);
+  flex:none;
+}
+.brand-text{line-height:1.15;}
+.brand-text b{display:block; font-family:'Noto Serif KR',serif; font-size:15px; color:var(--navy-3); letter-spacing:.2px;}
+.brand-text span{display:block; font-size:10.5px; color:#5a4519; font-weight:600;}
+.client-chip{
+  display:none;
+  align-items:center; gap:6px;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(0,0,0,.15);
+  border-radius:20px; padding:4px 10px 4px 8px;
+  font-size:12px; font-weight:700; color:var(--navy-3);
+}
+.client-chip.show{display:inline-flex;}
+.client-dot{width:6px;height:6px;border-radius:50%;background:var(--crimson);}
+.install-btn{
+  display:none;
+  align-items:center; gap:6px;
+  background:rgba(11,33,64,.9); color:#EFE2BC;
+  border:1px solid rgba(11,33,64,.9); border-radius:20px;
+  padding:7px 13px; font-size:12px; font-weight:700; cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.install-btn.show{display:inline-flex;}
+.install-btn:hover{filter:brightness(1.15);}
+
+.tabs{
+  position:fixed; top:calc(64px + env(safe-area-inset-top,0px)); left:0; right:0; z-index:49;
+  display:flex; gap:2px; overflow-x:auto;
+  background:var(--navy);
+  padding:0 10px;
+  border-bottom:1px solid rgba(198,161,91,.3);
+  transform:translateY(-120%);
+  transition:transform .35s ease;
+  scrollbar-width:none;
+}
+.tabs.show{transform:translateY(0);}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{
+  flex:none;
+  background:transparent; border:none; cursor:pointer;
+  color:#9FB0C7; font-family:'Noto Sans KR',sans-serif; font-weight:600; font-size:12.5px;
+  padding:12px 14px; white-space:nowrap;
+  border-bottom:3px solid transparent;
+  transition:color .2s, border-color .2s;
+}
+.tab-btn:hover{color:#E7D4A3;}
+.tab-btn.active{color:#fff; border-bottom-color:var(--gold);}
+
+.page{padding-top:calc(64px + env(safe-area-inset-top,0px));}
+.page.with-tabs{padding-top:calc(106px + env(safe-area-inset-top,0px));}
+
+/* ---------- screens ---------- */
+.screen{display:none;}
+.screen.active{display:block; animation:fadeUp .5s ease both;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+@media (prefers-reduced-motion:reduce){
+  .screen.active{animation:none;}
+}
+
+/* ---------- HOME ---------- */
+#screen-home{
+  min-height:calc(100vh - 64px);
+  position:relative;
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(198,161,91,.18), transparent 55%),
+    radial-gradient(ellipse at 90% 110%, rgba(30,86,49,.35), transparent 55%),
+    linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 60%, #081324 100%);
+  color:#EDE6D4;
+  overflow:hidden;
+}
+#screen-home::before{
+  content:"";
+  position:absolute; inset:0;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(198,161,91,.05) 0 2px, transparent 2px 90px);
+  pointer-events:none;
+}
+.hero-wrap{
+  position:relative; z-index:2;
+  max-width:640px; margin:0 auto;
+  padding:64px 24px 90px;
+  text-align:center;
+}
+.hero-eyebrow{
+  font-size:12.5px; letter-spacing:2.5px; color:var(--gold-light);
+  font-weight:700; text-transform:uppercase; opacity:.85;
+}
+.hero-title{
+  font-size:clamp(30px,6vw,44px);
+  line-height:1.28; margin:14px 0 8px;
+  color:#fff;
+}
+.hero-title em{
+  font-style:normal; color:var(--gold-light);
+  background:linear-gradient(180deg, transparent 62%, rgba(198,161,91,.35) 62%);
+}
+.hero-sub{color:#B9C3D6; font-size:14.5px; margin:0 0 42px; line-height:1.7;}
+
+.seal-btn{
+  position:relative; width:196px; height:196px; margin:0 auto;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 35% 28%, #47996159, transparent 45%),
+    radial-gradient(circle at 50% 50%, var(--green-light) 0%, var(--green) 46%, var(--green-2) 100%);
+  border:5px solid var(--gold);
+  box-shadow:
+    0 0 0 3px rgba(198,161,91,.25),
+    0 18px 40px rgba(0,0,0,.45),
+    inset 0 3px 10px rgba(255,255,255,.25),
+    inset 0 -10px 18px rgba(0,0,0,.35);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px;
+  cursor:pointer;
+  color:#fff;
+  animation:pulseSeal 3.2s ease-in-out infinite;
+}
+@keyframes pulseSeal{
+  0%,100%{box-shadow:0 0 0 3px rgba(198,161,91,.25),0 18px 40px rgba(0,0,0,.45),inset 0 3px 10px rgba(255,255,255,.25),inset 0 -10px 18px rgba(0,0,0,.35);}
+  50%{box-shadow:0 0 0 9px rgba(198,161,91,.12),0 18px 48px rgba(0,0,0,.5),inset 0 3px 10px rgba(255,255,255,.3),inset 0 -10px 18px rgba(0,0,0,.35);}
+}
+.seal-btn:active{transform:scale(.97);}
+.seal-btn .seal-main{font-family:'Noto Serif KR',serif; font-weight:900; font-size:22px; line-height:1.25;}
+.seal-btn .seal-switch{font-size:11.5px; letter-spacing:1.5px; color:var(--gold-light); font-weight:700;}
+.seal-btn .power-ring{
+  width:34px;height:34px;border-radius:50%;
+  border:3px solid #F2C9A0;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:2px;
+}
+.power-ring::before{content:"";width:2px;height:14px;background:#F2C9A0;border-radius:2px;}
+@media (prefers-reduced-motion:reduce){.seal-btn{animation:none;}}
+
+.hero-footnote{margin-top:34px; font-size:12px; color:#8393AA;}
+
+/* floating bill decoration */
+.bills{
+  position:absolute; right:-40px; bottom:-30px; z-index:1;
+  width:280px; opacity:.9; pointer-events:none;
+}
+@media (max-width:640px){.bills{display:none;}}
+
+/* ---------- generic section shell ---------- */
+.shell{max-width:920px; margin:0 auto; padding:28px 20px 80px;}
+.section-head{
+  display:flex; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap;
+}
+.pill-select{
+  background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));
+  color:#fff; font-weight:800; font-size:13px; letter-spacing:1px;
+  padding:8px 18px; border-radius:999px;
+  box-shadow:0 3px 0 rgba(0,0,0,.18);
+  flex:none;
+}
+.section-head h2{font-size:19px; margin:0; color:var(--navy-3); font-weight:700;}
+
+.card{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-left:4px solid var(--gold);
+  border-radius:10px;
+  padding:22px;
+  box-shadow:0 2px 10px rgba(11,33,64,.06);
+}
+
+/* form */
+.field{margin-bottom:18px;}
+.field label{
+  display:block; font-weight:700; font-size:13.5px; color:var(--navy-3); margin-bottom:6px;
+}
+.field input, .field select{
+  width:100%; padding:11px 13px; border-radius:8px;
+  border:1.5px solid var(--line); background:#fff;
+  font-family:'Noto Sans KR',sans-serif; font-size:14.5px; color:var(--ink);
+  transition:border-color .18s, box-shadow .18s;
+}
+.field input:focus, .field select:focus{
+  outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(198,161,91,.22);
+}
+.field .hint{font-size:11.5px; color:var(--ink-soft); margin-top:5px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:560px){.grid2{grid-template-columns:1fr;}}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border:none; cursor:pointer; border-radius:9px;
+  font-family:'Noto Sans KR',sans-serif; font-weight:700; font-size:14.5px;
+  padding:13px 22px;
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{
+  background:linear-gradient(180deg,#2F6E44,var(--green) 60%,var(--green-2));
+  color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.2);
+}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-ghost{
+  background:transparent; color:var(--navy-3); border:1.5px solid var(--line);
+}
+.btn-ghost:hover{border-color:var(--gold); background:rgba(198,161,91,.08);}
+.btn-gold{
+  background:linear-gradient(180deg,#D9BC7C,var(--gold) 55%,#a9843f);
+  color:#3a2c0e; box-shadow:0 3px 0 rgba(0,0,0,.18);
+}
+.row-btns{display:flex; gap:12px; margin-top:26px; flex-wrap:wrap;}
+
+/* choose asset */
+.choose-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:12px;}
+@media (max-width:640px){.choose-grid{grid-template-columns:1fr;}}
+.choose-card{
+  border-radius:16px; padding:32px 24px; cursor:pointer; text-align:center;
+  border:2px solid transparent;
+  transition:transform .2s ease, box-shadow .2s ease;
+  position:relative;
+}
+.choose-card:hover{transform:translateY(-4px); box-shadow:0 14px 28px rgba(11,33,64,.18);}
+.choose-card.protect{
+  background:linear-gradient(160deg,#C43647,var(--crimson) 55%,var(--crimson-2));
+  color:#fff;
+}
+.choose-card.pension{
+  background:linear-gradient(160deg,#16305A,var(--navy) 55%,#081324);
+  color:#fff;
+}
+.choose-card h3{font-size:24px; margin:0 0 6px;}
+.choose-card p.tag{font-size:12.5px; opacity:.85; margin:0 0 14px;}
+.choose-card .desc{font-size:13px; line-height:1.7; opacity:.92;}
+.choose-card .go{
+  margin-top:18px; display:inline-block; font-size:12.5px; font-weight:700;
+  border:1px solid rgba(255,255,255,.5); border-radius:999px; padding:7px 16px;
+}
+
+/* pill tabs for sub-calculators (금리형/펀드형/보장) */
+.subtabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+.subtab{
+  padding:8px 16px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer;
+  border:1.5px solid var(--line); background:#fff; color:var(--ink-soft);
+  transition:all .15s ease;
+}
+.subtab.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+/* results */
+.result-box{
+  margin-top:18px; border-radius:10px; overflow:hidden;
+  border:1px solid var(--line-gold);
+}
+.result-row{
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding:13px 16px; font-size:14px; border-bottom:1px solid var(--line);
+  background:#fff;
+}
+.result-row:last-child{border-bottom:none;}
+.result-row .label{color:var(--ink-soft); font-weight:600;}
+.result-row .val{font-weight:700; color:var(--navy-3);}
+.result-row.highlight{
+  background:linear-gradient(90deg,#FBF3DD,#F3EFE3);
+}
+.result-row.highlight .val{color:var(--crimson); font-size:18px;}
+.fx-row{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:8px 16px 14px; background:#fff; border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+.fx-row label{color:var(--ink-soft); font-weight:600; flex:none;}
+.fx-row input{
+  width:90px; padding:6px 8px; border-radius:6px; border:1.5px solid var(--line);
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right;
+}
+.fx-row input:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 2px rgba(198,161,91,.2);}
+.fx-row .fx-result{
+  font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--navy-3);
+  margin-left:auto; font-size:12.5px;
+}
+.term-toggle{display:flex; gap:8px; margin:14px 0;}
+.term-btn{
+  flex:1; text-align:center; padding:10px 6px; border-radius:8px; cursor:pointer;
+  border:1.5px solid var(--line); font-weight:700; font-size:13px; color:var(--ink-soft); background:#fff;
+}
+.term-btn.active{border-color:var(--green); background:rgba(30,86,49,.08); color:var(--green-2);}
+
+/* growth bar viz */
+.growth-viz{margin-top:20px;}
+.growth-viz .bars{display:flex; align-items:flex-end; gap:26px; height:150px; padding:0 6px 8px; border-bottom:1.5px solid var(--line);}
+.gbar{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+.gbar .stick{
+  width:44px; border-radius:6px 6px 0 0;
+  transition:height 1s cubic-bezier(.2,.8,.2,1);
+  height:0;
+}
+.gbar.principal .stick{background:linear-gradient(180deg,#8FA6C6,var(--navy-2));}
+.gbar.future .stick{background:linear-gradient(180deg,#3E8A57,var(--green-2));}
+.gbar .glabel{margin-top:8px; font-size:12px; color:var(--ink-soft); font-weight:700;}
+.gbar .gval{font-size:12.5px; font-weight:800; color:var(--navy-3); margin-top:2px;}
+
+.note{
+  margin-top:18px; font-size:11.5px; color:var(--ink-soft); line-height:1.7;
+  border-top:1px dashed var(--line); padding-top:12px;
+}
+.note b{color:var(--crimson);}
+
+/* ---------- FINAL screen ---------- */
+#screen-final{
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(198,161,91,.15), transparent 50%),
+    linear-gradient(170deg, var(--navy) 0%, #081324 100%);
+  color:#EDE6D4;
+  min-height:calc(100vh - 64px);
+}
+.final-wrap{max-width:920px; margin:0 auto; padding:56px 22px 90px; text-align:center;}
+.final-wrap h2{font-size:clamp(26px,5vw,36px); color:#fff; margin-bottom:8px;}
+.final-wrap .sub{color:#B9C3D6; font-size:13.5px; margin-bottom:38px;}
+.final-cards{display:grid; grid-template-columns:1fr 1fr; gap:22px; text-align:left;}
+@media (max-width:640px){.final-cards{grid-template-columns:1fr;}}
+.final-card{
+  background:rgba(255,255,255,.05); border:1px solid rgba(198,161,91,.35); border-radius:14px; padding:22px;
+}
+.final-card h4{color:var(--gold-light); font-size:15px; margin:0 0 6px; font-family:'Noto Serif KR',serif;}
+.final-card p{color:#C7D0DF; font-size:13px; line-height:1.7; margin:0;}
+.perk-list{margin-top:34px; text-align:left; max-width:520px; margin-left:auto; margin-right:auto;}
+.perk-list li{color:#DCE2ED; font-size:13.5px; margin-bottom:8px; line-height:1.6;}
+.perk-list b{color:var(--gold-light);}
+.final-nav{display:flex; gap:12px; justify-content:center; margin-top:40px; flex-wrap:wrap;}
+
+/* customer summary chip in choose/calculator screens */
+.summary-strip{
+  display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft);
+  background:rgba(198,161,91,.1); border:1px solid var(--line-gold); border-radius:8px;
+  padding:10px 14px; margin-bottom:22px;
+}
+.summary-strip b{color:var(--navy-3);}
+
+.privacy-note{font-size:11px; color:var(--ink-soft); margin-top:10px;}
+
+@media (max-width:480px){
+  .card{padding:16px;}
+  .shell{padding:22px 14px 70px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 최초 1회 본인확인 게이트 ============ -->
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-mark" style="width:44px;height:44px;font-size:20px;">$</div>
+      <div>
+        <b style="display:block;font-family:'Noto Serif KR',serif;font-size:16px;color:#fff;">달러자산 만들기</b>
+        <span style="display:block;font-size:11px;color:#B9C3D6;">최초 1회 본인확인 후 이용할 수 있습니다</span>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="authTabPhone" onclick="setAuthMethod('phone')">휴대폰 번호</div>
+      <div class="auth-tab" id="authTabEmail" onclick="setAuthMethod('email')">이메일</div>
+    </div>
+
+    <!-- 휴대폰 인증 -->
+    <div id="authPhoneBlock">
+      <div class="field">
+        <label for="authPhoneInput">등록된 휴대폰 번호를 입력하세요</label>
+        <input id="authPhoneInput" type="tel" placeholder="010-0000-0000" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="verifyPhone()">번호 확인하고 시작하기</button>
+      <p class="auth-msg" id="authPhoneMsg"></p>
+    </div>
+
+    <!-- 이메일 인증 -->
+    <div id="authEmailBlock" style="display:none;">
+      <div id="authEmailStep1">
+        <div class="field">
+          <label for="authEmailInput">이메일 주소를 입력하세요</label>
+          <input id="authEmailInput" type="email" placeholder="name@example.com">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="sendEmailCode()">인증코드 받기</button>
+      </div>
+      <div id="authEmailStep2" style="display:none;">
+        <p class="auth-msg" style="color:#DCE2ED;">이 기기에 표시된 인증코드를 아래에 입력하세요.<br>
+          동시에 인증코드가 담긴 메일 초안이 열립니다 — 본인 메일함으로 [보내기]를 눌러 보관해두셔도 됩니다.</p>
+        <div class="auth-code-display" id="authCodeDisplay">------</div>
+        <div class="field">
+          <label for="authCodeInput">인증코드 6자리 입력</label>
+          <input id="authCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="123456">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="verifyEmailCode()">인증하고 시작하기</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="resetEmailStep()">다시 입력</button>
+      </div>
+      <p class="auth-msg" id="authEmailMsg"></p>
+    </div>
+
+    <p class="auth-footnote">본인확인은 이 기기(브라우저)에 안전하게 기록되며, 다음 접속부터는 다시 묻지 않습니다.</p>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+<div class="topbar">
+  <div class="brand" onclick="goHome()">
+    <div class="brand-mark">$</div>
+    <div class="brand-text">
+      <b>Happy Dollar</b>
+      <span>달러자산 만들기</span>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div class="client-chip" id="clientChip"><span class="client-dot"></span><span id="clientChipText"></span></div>
+    <button id="installBtn" class="install-btn" onclick="triggerInstall()">앱 설치</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn" data-target="screen-customer" onclick="showScreen('screen-customer')">01 고객정보</button>
+  <button class="tab-btn" data-target="screen-needs" onclick="showScreen('screen-needs')">달러 니즈 환기</button>
+  <button class="tab-btn" data-target="screen-choose" onclick="showScreen('screen-choose')">02 자산선택</button>
+  <button class="tab-btn" data-target="screen-suitability-hub" onclick="showScreen('screen-suitability-hub')">3. 적합성진단</button>
+  <button class="tab-btn" data-target="screen-protect" onclick="showScreen('screen-protect')">달러보장자산</button>
+  <button class="tab-btn" data-target="screen-pension-rate" onclick="showScreen('screen-pension-rate')">달러연금 · 금리형</button>
+  <button class="tab-btn" data-target="screen-pension-fund" onclick="showScreen('screen-pension-fund')">달러연금 · 펀드형</button>
+  <button class="tab-btn" data-target="screen-storybook" onclick="openStorybook()">부록첨부</button>
+  <button class="tab-btn" data-target="screen-rp" onclick="showScreen('screen-rp')">RP연습</button>
+  <button class="tab-btn" data-target="screen-coverage" onclick="showScreen('screen-coverage')">보장분석</button>
+  <button class="tab-btn" data-target="screen-final" onclick="showScreen('screen-final')">마무리</button>
+</div>
+
+<div class="page" id="pageWrap">
+
+  <!-- ============ HOME ============ -->
+  <section class="screen active" id="screen-home">
+    <div class="hero-wrap">
+      <div class="hero-eyebrow">Since Today · 달러로 준비하는 내일</div>
+      <h1 class="hero-title">달러자산<br><em>만 들 기</em></h1>
+      <p class="hero-sub">달러로의 자산이전!!! 시간을 가지고 매월 꾸준하게 —<br>보장자산과 연금저축, 두 가지 방식으로 설계해 드립니다.</p>
+      <div class="seal-btn" onclick="showScreen('screen-customer')" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter')showScreen('screen-customer')">
+        <div class="seal-main">스위치 ON</div>
+        <div class="power-ring"></div>
+        <div class="seal-switch">START</div>
+      </div>
+      <div class="hero-footnote">버튼을 눌러 상담을 시작하세요 · 입력 정보는 이 화면에만 임시로 표시됩니다</div>
+    </div>
+  </section>
+
+  <div class="page with-tabs" style="padding-top:48px;">
+  <!-- ============ CUSTOMER INFO ============ -->
+  <section class="screen" id="screen-customer">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));">STEP 01</span>
+        <h2>고객 기본정보입력</h2>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="cName">고 객 명</label>
+          <input id="cName" type="text" placeholder="예: 홍길동">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="cBirth">생년월일</label>
+            <input id="cBirth" type="text" placeholder="예: 1985.03.12">
+          </div>
+          <div class="field">
+            <label for="cPhone">연 락 처</label>
+            <input id="cPhone" type="text" placeholder="예: 010-0000-0000">
+          </div>
+        </div>
+        <div class="field">
+          <label for="cAddr">거 주 지</label>
+          <input id="cAddr" type="text" placeholder="예: 서울특별시 강남구">
+        </div>
+        <div class="field">
+          <label for="cGoal">가입목적</label>
+          <input id="cGoal" type="text" placeholder="예: 노후 연금 준비, 자녀 목돈 마련 등">
+        </div>
+        <p class="privacy-note">★ 구체적인 고객의 정보는 각 보험사의 개인정보동의 및 가입설계 동의서 작성 후 가입진행 됩니다. 이 화면의 입력값은 저장·전송되지 않고 상담 중에만 사용됩니다.</p>
+        <div class="row-btns">
+          <button class="btn btn-primary" onclick="saveCustomer()">고객정보 저장하고 다음 단계</button>
+          <button class="btn btn-gold" onclick="showScreen('screen-suitability-hub')">📄 적합성진단서 작성</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-choose')">건너뛰기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 달러 니즈 환기 ============ -->
+  <section class="screen" id="screen-needs">
+    <div class="shell" style="max-width:920px;">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));">니즈환기</span>
+        <h2>달러 니즈 환기</h2>
+      </div>
+
+      <!-- 이상형 월드컵 -->
+      <div class="card needs-card">
+        <div class="needs-heart">❤️ 이상형 월드컵</div>
+        <h3 class="needs-title">둘 중 원하는 것을 고르시오!!!</h3>
+        <p class="needs-sub">더 많이 쓰이고, 더 가치 있는 것을 골라봅시다.<br>한 가지씩 골라 내 미래를 위한 꼭 필요한 자산을 선택!!!</p>
+
+        <div class="needs-round">
+          <div class="needs-round-label">선택.1</div>
+          <div class="needs-vs-row" data-group="vs1">
+            <div class="needs-vs-box" onclick="selectVs(this,'vs1')"><div class="nvs-icon">🎟️</div><div class="nvs-name">문화상품권</div><div class="nvs-amt">₩100,000</div></div>
+            <div class="needs-vs-divider">VS</div>
+            <div class="needs-vs-box" onclick="selectVs(this,'vs1')"><div class="nvs-icon">🎁</div><div class="nvs-name">롯데상품권</div><div class="nvs-amt">₩100,000</div></div>
+          </div>
+        </div>
+
+        <div class="needs-round">
+          <div class="needs-round-label">선택.2</div>
+          <div class="needs-vs-row" data-group="vs2">
+            <div class="needs-vs-box" onclick="selectVs(this,'vs2')"><div class="nvs-icon">🎁</div><div class="nvs-name">롯데상품권</div><div class="nvs-amt">₩100,000</div></div>
+            <div class="needs-vs-divider">VS</div>
+            <div class="needs-vs-box" onclick="selectVs(this,'vs2')"><div class="nvs-icon">💵</div><div class="nvs-name">현금</div><div class="nvs-amt">₩50,000</div></div>
+          </div>
+        </div>
+
+        <div class="needs-round">
+          <div class="needs-round-label">선택.3</div>
+          <div class="needs-vs-row" data-group="vs3">
+            <div class="needs-vs-box" onclick="selectVs(this,'vs3')"><div class="nvs-icon">💵</div><div class="nvs-name">현금</div><div class="nvs-amt">₩50,000</div></div>
+            <div class="needs-vs-divider">VS</div>
+            <div class="needs-vs-box" onclick="selectVs(this,'vs3')"><div class="nvs-icon">💲</div><div class="nvs-name">미화 (USD)</div><div class="nvs-amt">$100</div></div>
+          </div>
+        </div>
+
+        <p class="needs-fx-note">*원/달러 환율: 1,320.00원 (24.10.01 기준) · *10년 평균환율: 1달러당 1,171원</p>
+        <div class="needs-punchline">"Good~ 현명하고 지혜로운 선택이 미래를 빛나게 만듭니다."</div>
+      </div>
+
+      <!-- 국가경쟁력 -->
+      <div class="card needs-card" style="margin-top:22px;">
+        <div class="needs-heart">❤️ 국가경쟁력</div>
+        <h3 class="needs-title">이들 중 달러가 필요 없는 사람은?~~</h3>
+
+        <div class="needs-people-row">
+          <div class="needs-people-icon">🌍🧑‍🤝‍🧑</div>
+          <div class="needs-people-caption">한국에서 함께 일하는 글로벌 동료들</div>
+        </div>
+        <div class="needs-bubble blue">과연, 이 분들이 한국을 방문하지 않는 한 원화(KRW)가 필요할까요?</div>
+
+        <div class="needs-people-row">
+          <div class="needs-people-icon">👨‍👩‍👧‍👦</div>
+          <div class="needs-people-caption">우리 가족</div>
+        </div>
+        <div class="needs-bubble red">과연, 이 분들은 글로벌시대에 달러(USD)가 필요하지 않을까요?</div>
+      </div>
+
+      <!-- 달러니즈환기: 구매력 -->
+      <div class="card needs-card" style="margin-top:22px;">
+        <div class="needs-heart">❤️ 달러니즈환기</div>
+        <h3 class="needs-title">내가 가진 원화 자산은 어떻게 될까?</h3>
+
+        <div class="needs-chart-box">
+          <div class="needs-chart-title">원화 1,000원으로 무엇을 할 수 있을까? (구매력)</div>
+          <svg viewBox="0 0 560 180" class="needs-chart-svg">
+            <polyline points="20,30 128,55 236,75 344,100 452,120 540,138" fill="none" stroke="#C6A15B" stroke-width="3"/>
+            <circle cx="20" cy="30" r="4" fill="#0B2140"/>
+            <circle cx="540" cy="138" r="4" fill="#A22332"/>
+            <text x="10" y="20" font-size="13" fill="#0B2140" font-weight="700">1,000원</text>
+            <text x="495" y="160" font-size="13" fill="#A22332" font-weight="700">542원</text>
+            <text x="10" y="175" font-size="11" fill="#5B6472">2000년</text>
+            <text x="500" y="175" font-size="11" fill="#5B6472">2025년</text>
+          </svg>
+          <p class="needs-chart-desc">25년 동안 원화의 가치는 <b>45.8%</b>가 감소했습니다.</p>
+        </div>
+
+        <div class="needs-timeline">
+          <div class="needs-timeline-item"><div class="nti-icon">🚌</div><div class="nti-label">4달 버스요금</div><div class="nti-year">1965년</div></div>
+          <div class="needs-timeline-item"><div class="nti-icon">🍜</div><div class="nti-label">라면 50봉지</div><div class="nti-year">1970년</div></div>
+          <div class="needs-timeline-item"><div class="nti-icon">🥚</div><div class="nti-label">계란 1.3판</div><div class="nti-year">1974년</div></div>
+          <div class="needs-timeline-item"><div class="nti-icon">🍥</div><div class="nti-label">짜장면 1그릇</div><div class="nti-year">1990년</div></div>
+          <div class="needs-timeline-item"><div class="nti-icon">🍙</div><div class="nti-label">김밥 1줄</div><div class="nti-year">2000년</div></div>
+          <div class="needs-timeline-item"><div class="nti-icon">🍱</div><div class="nti-label">컵라면</div><div class="nti-year">2025년</div></div>
+        </div>
+
+        <div class="needs-banner">매년 물가가 오른다는 것은 나의 자산 돈 가치가 떨어진다는 것입니다.</div>
+
+        <div class="needs-green-box">
+          <div class="needs-green-pill">환율보다 중요한 것</div>
+          <p class="needs-green-q">"고객님은 앞으로도 자산의 100%를 원화로 가지고 가실 생각이세요?"</p>
+          <p class="needs-green-p">환율이 1,300원이 될지, 1,500원이 될지는 누구도 정확히 알 수 없습니다.<br>하지만 한 가지는 선택할 수 있습니다.</p>
+          <p class="needs-green-bold">원화만 집중할 것인가, 원화 + 달러로 통화를 분산할 것인가?</p>
+          <p class="needs-green-quote">"환율을 예측하는 사람보다, 환율에 대응할 수 있도록 준비한 사람이 더 유리합니다."</p>
+        </div>
+      </div>
+
+      <div class="row-btns" style="margin-top:22px;">
+        <button class="btn btn-primary" onclick="showScreen('screen-choose')">다음 단계 (자산선택)</button>
+        <button class="btn btn-ghost" onclick="showScreen('screen-customer')">이전단계</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. 적합성진단 (허브) ============ -->
+  <section class="screen" id="screen-suitability-hub">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));">STEP 03</span>
+        <h2>적합성진단서 선택</h2>
+      </div>
+      <div class="choose-grid">
+        <div class="choose-card protect" onclick="openSuitability()">
+          <p class="tag">외화보험 가입 전 확인</p>
+          <h3>외화보험<br>적합성진단</h3>
+          <p class="desc">외화보험 계약자 정보 확인서를 작성합니다.<br>취약금융소비자 확인, 14문항 진단, 동의·서명 포함</p>
+          <span class="go">작성하러 가기 →</span>
+        </div>
+        <div class="choose-card pension" onclick="openSuitabilityVar()">
+          <p class="tag">변액보험 가입 전 확인</p>
+          <h3>변액보험<br>적합성진단</h3>
+          <p class="desc">변액보험 계약자 정보확인서를 작성합니다.<br>취약금융소비자 확인, 17문항 진단, 동의·서명 포함</p>
+          <span class="go">작성하러 가기 →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 외화보험 계약자 정보 확인서 ============ -->
+  <section class="screen" id="screen-suitability">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));">STEP 01-A</span>
+        <h2>외화보험 계약자 정보 확인서</h2>
+      </div>
+
+      <div class="card doc-card" id="doc-fx">
+        <div class="doc-title">
+          <div class="doc-title-main">외화보험 계약자 정보 확인서</div>
+        </div>
+
+        <p class="doc-disclaimer">
+          본 확인서는 고객님의 연령, 재산상황, 보험가입의 목적 등을 파악하여 보험계약자에게 가장 적합한 보험계약 체결을 권유하기 위한 기초자료로 활용됩니다.
+          허위 또는 불성실한 답변을 하시는 경우 부적합한 보험계약을 권유하게 될 수 있으며, 이로 인해 발생하는 모든 손해는 보험계약자 본인에게 귀속되오니 유념하여 주시기 바랍니다.
+          보험설계사 등 타인이 본 확인서를 대신 작성하거나 고객님께 사실과 다른 내용의 답변을 기재하도록 유도하는 것은 불완전판매에 해당합니다.
+          완전판매모니터링("해피콜") 과정에서 불완전판매로 확인되는 경우, 보험가입이 거절될 수 있습니다.
+        </p>
+
+        <div class="doc-meta-row">
+          <div class="field" style="flex:2;">
+            <label for="fxName">계약자(법인)명</label>
+            <input id="fxName" type="text" placeholder="고객명을 입력하세요">
+          </div>
+          <div class="field" style="flex:1;">
+            <label for="fxAge">연령 (만)</label>
+            <input id="fxAge" type="number" min="0" placeholder="세">
+          </div>
+          <div class="field date-field" style="flex:1.6;">
+            <label>진단일자</label>
+            <div class="date-inputs">
+              <input id="fxYear" type="number" placeholder="년"><span>년</span>
+              <input id="fxMonth" type="number" placeholder="월" min="1" max="12"><span>월</span>
+              <input id="fxDay" type="number" placeholder="일" min="1" max="31"><span>일</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vulnerable-box">
+          <div class="vulnerable-label">취약금융소비자 해당여부</div>
+          <div class="radio-row" id="fxVulnerable">
+            <label><input type="radio" name="fxVulnerable" value="예"> 예</label>
+            <label><input type="radio" name="fxVulnerable" value="아니오"> 아니오</label>
+          </div>
+          <p class="vulnerable-note">취약금융소비자란 고령투자자(만65세 이상), 미성년자, 정신적 장애로 일상이나 사회생활에 제약을 받는 자 등으로 합리적 판단이 곤란한 자로서 계약자 보호의 필요성이 높은 자를 의미합니다.<br>
+          ※ 미성년자, 정신적 장애로 일상·사회 생활에 제약을 받는자일 경우, 대리인(친권자)이 정보 제공 및 수집·이용 <label class="inline-check"><input type="checkbox" id="fxAgentConsent"> 동의</label></p>
+        </div>
+
+        <div id="fxQuestions"></div>
+
+        <div class="consent-box">
+          <div class="consent-title">개인(신용)정보처리 수집·이용 동의에 관한 사항</div>
+          <p class="doc-disclaimer small">
+            본 동의를 거부하시는 경우에는 (외화)보험계약 상담 등 정상적인 서비스 제공이 불가능하며, 동의하시더라도 당사 홈페이지 및 고객센터(1588-9600), 설계사를 통해 정보제공 철회를 요청하실 수 있습니다.<br>
+            수집이용 목적: 보험계약 상담, (외화)보험계약 체결여부 결정 / 수집·이용할 개인(신용)정보의 내용: 개인식별정보(성명)와 연령, 재산(소득)상황, 가입목적, 투자성향 등 / 이용·보유기간: 수집·이용 동의일로부터 24개월까지
+          </p>
+          <label class="agree-check"><input type="checkbox" id="fxConsent1"> 동의함</label>
+        </div>
+
+        <div class="consent-box">
+          <div class="consent-title">고객확인사항</div>
+          <p class="doc-disclaimer small">
+            위와 같이 제공한 정보의 내용이 정확한 것임을 확인하고, 이를 바탕으로 적합성 진단을 실시하고자 하며, 설계사는 상기 제공된 정보를 조작하거나 조작하도록 유도하지 않았습니다.<br>
+            본인이 제공한 정보는 향후 24개월동안 변경되지 않는 것으로 간주한다는 점을 설명 받았습니다.<br>
+            본인은 정보를 제공한지 24개월 이내라도 보험계약 정보에 변경사항이 발생한 경우, 이를 귀사에 통지하여야 귀사가 본인에게 적합한 보험계약을 권유할 수 있다는 점을 설명 받았습니다.
+          </p>
+          <label class="agree-check"><input type="checkbox" id="fxConsent2"> 확인함</label>
+        </div>
+
+        <div class="doc-section sign-row">
+          <div class="field">
+            <label for="fxCustomerSign">고객 서명 (성명 입력으로 서명을 갈음)</label>
+            <input id="fxCustomerSign" type="text" placeholder="예: 홍길동 (인)">
+          </div>
+          <div class="field">
+            <label for="fxAgentSign">설계사 서명 (성명 입력으로 서명을 갈음)</label>
+            <input id="fxAgentSign" type="text" placeholder="예: 김설계 (인)">
+          </div>
+        </div>
+
+        <p class="note no-print" id="fxValidateMsg"></p>
+
+        <div class="row-btns no-print">
+          <button class="btn btn-primary" onclick="saveDocPDF('fx')">🖨 PDF로 저장</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-suitability-hub')">이전단계</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 변액보험 계약자 정보확인서 ============ -->
+  <section class="screen" id="screen-suitability-var">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#2C4E85,var(--navy-2) 55%,var(--navy-3));">연금 · 펀드형</span>
+        <h2>변액보험 계약자 정보확인서</h2>
+      </div>
+
+      <div class="card doc-card" id="doc-var">
+        <div class="doc-title">
+          <div class="doc-title-main">변액보험 계약자 정보확인서</div>
+        </div>
+
+        <p class="doc-disclaimer">
+          본 확인서는 「금융소비자 보호에 관한 법률」 제17조(적합성원칙)에 따라 귀하의 연령, 재산상황, 보험가입 목적 등을 파악하여 보험계약자에게 가장 적합한 보험계약 체결을 권유하기 위한 기초 자료로 활용됩니다.
+          허위 또는 불성실한 답변을 하시는 경우 부적합한 보험계약을 권유하게 될 수 있으며, 이로 인해 발생하는 모든 손해는 보험계약자 본인에게 귀속되오니 유념하여 주시기 바랍니다.
+          또한, 귀하가 기대하는 특별계정(펀드)의 수익률이 높을수록 손실위험도 높아질 수 있으므로 유의하여 주시기 바랍니다.
+          보험설계사 등 타인이 본 확인서를 대신 작성하거나 귀하에게 사실과 다른 내용의 답변을 기재하도록 유도하는 것은 불완전판매에 해당합니다.
+          완전판매모니터링("해피콜") 과정에서 불완전판매로 확인되는 경우, 보험가입이 거절될 수 있습니다.
+        </p>
+
+        <div class="doc-meta-row">
+          <div class="field" style="flex:2;">
+            <label for="varName">계약자(법인)명</label>
+            <input id="varName" type="text" placeholder="고객명을 입력하세요">
+          </div>
+          <div class="field" style="flex:1;">
+            <label for="varAge">연령 (만)</label>
+            <input id="varAge" type="number" min="0" placeholder="세">
+          </div>
+          <div class="field date-field" style="flex:1.6;">
+            <label>진단일자</label>
+            <div class="date-inputs">
+              <input id="varYear" type="number" placeholder="년"><span>년</span>
+              <input id="varMonth" type="number" placeholder="월" min="1" max="12"><span>월</span>
+              <input id="varDay" type="number" placeholder="일" min="1" max="31"><span>일</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vulnerable-box">
+          <div class="vulnerable-label">취약금융소비자 해당여부</div>
+          <div class="radio-row" id="varVulnerable">
+            <label><input type="radio" name="varVulnerable" value="예"> 예</label>
+            <label><input type="radio" name="varVulnerable" value="아니오"> 아니오</label>
+          </div>
+          <p class="vulnerable-note">취약금융소비자란 고령투자자(만65세 이상), 미성년자, 정신적 장애로 일상이나 사회생활에 제약을 받는 자 등으로 합리적 판단이 곤란한 자로서 계약자 보호의 필요성이 높은 자를 의미합니다.<br>
+          ※ 미성년자, 정신적 장애로 일상·사회 생활에 제약을 받는자일 경우, 대리인(친권자)이 정보 제공 및 수집·이용 <label class="inline-check"><input type="checkbox" id="varAgentConsent"> 동의</label></p>
+        </div>
+
+        <div id="varQuestions"></div>
+
+        <p class="doc-disclaimer small glossary">
+          참고) ELW(주식워런트증권): 특정대상물을 사전에 정한 미래의 시기에 미리 정한 가격으로 살 수 있거나 팔 수 있는 권리를 가진 유가증권 ·
+          ELS(주가연계증권): 특정 주식의 가격이나 주가지수의 수치에 연계한 증권 · DLS(파생결합증권): 파생상품을 기초자산으로 해서 정해진 조건을 충족하면 약정한 수익률을 지급하는 상품 ·
+          ELB/DLB: ELS·DLS 중 원금을 보장해 주는 상품을 따로 분리한 형태의 상품 · 전단채(전자단기사채): 전자방식으로 발행되는 1년 미만의 단기채권
+        </p>
+
+        <div class="consent-box">
+          <div class="consent-title">개인 신용 정보처리 수집·이용 동의에 관한 사항</div>
+          <p class="doc-disclaimer small">
+            본 동의를 거부하는 경우 (변액)보험계약 상담 등 정상적인 서비스 제공이 불가하며, 동의하더라도 당사 홈페이지 및 고객센터(1588-9600) 또는 설계사를 통해 정보제공 철회를 요청할 수 있습니다.<br>
+            수집·이용 목적: 보험계약 상담, (변액)보험계약 체결여부 결정 / 수집·이용할 개인(신용) 정보의 내용: 개인식별정보(성명)와 연령, 재산(소득)상황, 가입목적, 투자성향 등 / 이용·보유 기간: 수집·이용 동의일로부터 24개월까지
+          </p>
+          <label class="agree-check"><input type="checkbox" id="varConsent1"> 동의함</label>
+        </div>
+
+        <div class="consent-box">
+          <div class="consent-title">고객 확인 사항</div>
+          <p class="doc-disclaimer small">
+            상기의 정보내용은 본인이 제공한 정보내용과 정확히 일치하는지 확인하였고, 이를 바탕으로 적합성 진단을 실시하고자 하며, 설계사는 상기 제공된 정보를 조작하거나 조작하도록 유도하지 않았습니다.<br>
+            본인이 제공한 정보는 향후 24개월동안 변경되지 않는 것으로 간주한다는 점을 설명 받았습니다.<br>
+            본인은 정보를 제공한지 24개월 이내라 하더라도 보험계약 정보에 변경사항이 발생한 경우, 이를 귀사에 통지해야 귀사가 본인에게 적합한 보험계약을 권유할 수 있다는 점을 설명 받았습니다.
+          </p>
+          <label class="agree-check"><input type="checkbox" id="varConsent2"> 확인함</label>
+        </div>
+
+        <div class="doc-section sign-row">
+          <div class="field">
+            <label for="varCustomerSign">고객 서명 (성명 입력으로 서명을 갈음)</label>
+            <input id="varCustomerSign" type="text" placeholder="예: 홍길동 (인)">
+          </div>
+          <div class="field">
+            <label for="varAgentSign">설계사 서명 (성명 입력으로 서명을 갈음)</label>
+            <input id="varAgentSign" type="text" placeholder="예: 김설계 (인)">
+          </div>
+        </div>
+
+        <p class="note no-print" id="varValidateMsg"></p>
+
+        <div class="row-btns no-print">
+          <button class="btn btn-primary" onclick="saveDocPDF('var')">🖨 PDF로 저장</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-pension-fund')">이전단계</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-choose">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select">선택</span>
+        <h2>어떤 자산을 만들고 싶습니까?</h2>
+      </div>
+      <div id="chooseSummary"></div>
+      <div class="choose-grid">
+        <div class="choose-card protect" onclick="showScreen('screen-protect')">
+          <p class="tag">사망보험금 &amp; 생활비지급</p>
+          <h3>보장자산</h3>
+          <p class="desc">종신보험으로 설계합니다.<br>비과세 혜택 · 사망보장 · 질병보장 · 저축전환</p>
+          <span class="go">계산하러 가기 →</span>
+        </div>
+        <div class="choose-card pension" onclick="showScreen('screen-pension-rate')">
+          <p class="tag">노후생활비 &amp; 목돈마련</p>
+          <h3>연금 · 저축</h3>
+          <p class="desc">금리형, 변액ETF 보험으로 설계합니다.<br>예탁형(일시납) · 적립형(월납)</p>
+          <span class="go">계산하러 가기 →</span>
+        </div>
+      </div>
+      <p class="note">★ 구체적인 고객의 정보는 각 보험사의 개인정보동의 및 가입설계 동의서 작성 후 가입진행 됩니다.</p>
+    </div>
+  </section>
+
+  <!-- ============ 보장자산 CALCULATOR ============ -->
+  <section class="screen" id="screen-protect">
+    <div class="shell">
+      <div class="subtabs">
+        <div class="subtab active">보장자산</div>
+        <div class="subtab" onclick="showScreen('screen-pension-rate')">연금 · 금리형</div>
+        <div class="subtab" onclick="showScreen('screen-pension-fund')">연금 · 펀드형</div>
+      </div>
+      <div class="section-head">
+        <span class="pill-select">선택</span>
+        <h2>납입기간(5년, 7년, 10년) 가입금액에 따라</h2>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="pMonthly">매월 보험료 (지출금액, $)</label>
+          <input id="pMonthly" type="number" min="0" step="1" placeholder="예: 300" oninput="calcProtect()">
+        </div>
+
+        <div class="term-toggle">
+          <div class="term-btn active" data-term="5" onclick="setTerm(this,5)">5년납</div>
+          <div class="term-btn" data-term="7" onclick="setTerm(this,7)">7년납</div>
+          <div class="term-btn" data-term="10" onclick="setTerm(this,10)">10년납</div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="pRate10">10년시점 환급율 (%)</label>
+            <input id="pRate10" type="number" step="0.1" value="124.9" oninput="calcProtect()">
+          </div>
+          <div class="field">
+            <label for="pRate20">20년시점 환급율 (%)</label>
+            <input id="pRate20" type="number" step="0.1" value="135.0" oninput="calcProtect()">
+          </div>
+        </div>
+
+        <div class="result-box">
+          <div class="result-row highlight">
+            <span class="label" id="pTotalLabel">5년시점 총납입금액</span>
+            <span class="val num" id="pTotalSel">$0</span>
+          </div>
+          <div class="fx-row">
+            <label>납입완료 시점 원/달러 환율</label>
+            <input id="pFxComplete" type="number" step="1" placeholder="예: 1350" oninput="calcProtect()">
+            <span class="fx-result" id="pTotalKRW">환율 입력 시 원화 환산 표시</span>
+          </div>
+
+          <div class="result-row highlight">
+            <span class="label">10년시점 예상 환급금</span>
+            <span class="val num" id="pRefund10">$0</span>
+          </div>
+          <div class="fx-row">
+            <label>10년시점 원/달러 환율</label>
+            <input id="pFx10" type="number" step="1" placeholder="예: 1350" oninput="calcProtect()">
+            <span class="fx-result" id="pRefund10KRW">환율 입력 시 원화 환산 표시</span>
+          </div>
+
+          <div class="result-row highlight">
+            <span class="label">20년시점 예상 환급금</span>
+            <span class="val num" id="pRefund20">$0</span>
+          </div>
+          <div class="fx-row">
+            <label>20년시점 원/달러 환율</label>
+            <input id="pFx20" type="number" step="1" placeholder="예: 1350" oninput="calcProtect()">
+            <span class="fx-result" id="pRefund20KRW">환율 입력 시 원화 환산 표시</span>
+          </div>
+        </div>
+
+        <div class="growth-viz">
+          <div class="bars">
+            <div class="gbar principal"><div class="stick" id="pBarPrincipal"></div><div class="glabel">총 납입원금</div><div class="gval" id="pBarPrincipalVal">$0</div></div>
+            <div class="gbar future"><div class="stick" id="pBarFuture"></div><div class="glabel">10년시점 환급금</div><div class="gval" id="pBarFutureVal">$0</div></div>
+          </div>
+        </div>
+
+        <p class="note">원화고정납 기준 <b>110% ~ 130%</b> 환급 구간 · 10년시점 기본값 124.9% · 20년시점 기본값 135.0%<br>
+        ★ 필요한 질병보장은 담당 설계사와 상담 후 결정하고 연령별 가입금액에 따라 보험료의 차이가 있습니다.</p>
+
+        <div class="row-btns">
+          <button class="btn btn-gold" onclick="showScreen('screen-final')">마무리 화면으로</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-choose')">이전단계</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 연금저축 · 금리형 ============ -->
+  <section class="screen" id="screen-pension-rate">
+    <div class="shell">
+      <div class="subtabs">
+        <div class="subtab" onclick="showScreen('screen-protect')">보장이동</div>
+        <div class="subtab active">금리형</div>
+        <div class="subtab" onclick="showScreen('screen-pension-fund')">펀드형</div>
+      </div>
+      <div class="section-head">
+        <span class="pill-select">선택</span>
+        <h2>연금 · 저축 — 금리형 (사업비 차감형)</h2>
+      </div>
+
+      <div class="term-toggle" style="max-width:340px;">
+        <div class="term-btn active" id="rateModeLump" onclick="setRateMode('lump')">일시납 · 오늘의 달러연금</div>
+        <div class="term-btn" id="rateModeMonthly" onclick="setRateMode('monthly')">월납 · 오로지연금</div>
+      </div>
+
+      <div class="card">
+        <!-- 일시납 -->
+        <div id="rateLumpBlock">
+          <div class="field">
+            <label for="rLumpAmt">예탁금액 (일시납, $)</label>
+            <input id="rLumpAmt" type="number" min="0" step="100" placeholder="예: 50000" oninput="calcRateLump()">
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="rLumpFee">사업비율 (%)</label>
+              <input id="rLumpFee" type="number" step="0.01" value="1.34" oninput="calcRateLump()">
+            </div>
+            <div class="field">
+              <label for="rLumpRate">공시이율 (연복리, %)</label>
+              <input id="rLumpRate" type="number" step="0.01" value="4.85" oninput="calcRateLump()">
+            </div>
+          </div>
+          <div class="field">
+            <label for="rLumpYears">거치기간 (년)</label>
+            <input id="rLumpYears" type="number" min="1" max="30" step="1" value="10" oninput="calcRateLump()">
+          </div>
+          <div class="result-box">
+            <div class="result-row"><span class="label">사업비</span><span class="val num" id="rLumpFeeAmt">$0</span></div>
+            <div class="result-row highlight"><span class="label">순예탁원금 (사업비 차감, 이자 미적용)</span><span class="val num" id="rLumpNet">$0</span></div>
+            <div class="fx-row">
+              <label>예탁 시점 원/달러 환율</label>
+              <input id="rLumpFxNet" type="number" step="1" placeholder="예: 1350" oninput="calcRateLump()">
+              <span class="fx-result" id="rLumpNetKRW">환율 입력 시 원화 환산 표시</span>
+            </div>
+            <div class="result-row highlight"><span class="label">적립금 계산 (공시이율 적용)</span><span class="val num" id="rLumpFV">$0</span></div>
+            <div class="fx-row">
+              <label>만기 시점 원/달러 환율</label>
+              <input id="rLumpFxFV" type="number" step="1" placeholder="예: 1350" oninput="calcRateLump()">
+              <span class="fx-result" id="rLumpFVKRW">환율 입력 시 원화 환산 표시</span>
+            </div>
+          </div>
+          <div class="growth-viz">
+            <div class="bars">
+              <div class="gbar principal"><div class="stick" id="rLumpBarP"></div><div class="glabel">순예탁원금</div><div class="gval" id="rLumpBarPVal">$0</div></div>
+              <div class="gbar future"><div class="stick" id="rLumpBarF"></div><div class="glabel">적립금(공시이율 적용)</div><div class="gval" id="rLumpBarFVal">$0</div></div>
+            </div>
+          </div>
+          <p class="note">★ 일시납 연금은 미국 채권에 투자되는 상품으로 금리에 영향을 받아 미국 금리가 인상되면 수익이 줄어드는 상품입니다.<br>
+          순예탁원금 = 납입금액 − 납입금액×사업비 · 적립금은 이 순예탁원금이 거치기간 동안 공시이율(연복리)로 부리되어 계산됩니다.</p>
+        </div>
+
+        <!-- 월납 -->
+        <div id="rateMonthlyBlock" style="display:none;">
+          <div class="field">
+            <label for="rMonAmt">적립식 월납입액 ($)</label>
+            <input id="rMonAmt" type="number" min="0" step="10" placeholder="예: 300" oninput="calcRateMonthly()">
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="rMonFee">사업비율 (%)</label>
+              <input id="rMonFee" type="number" step="0.01" value="7.44" oninput="calcRateMonthly()">
+            </div>
+            <div class="field">
+              <label for="rMonRate">공시이율 (연복리, %)</label>
+              <input id="rMonRate" type="number" step="0.01" value="4.85" oninput="calcRateMonthly()">
+            </div>
+          </div>
+          <div class="field">
+            <label for="rMonYears">납입기간 (년)</label>
+            <input id="rMonYears" type="number" min="1" max="30" step="1" value="10" oninput="calcRateMonthly()">
+          </div>
+          <div class="result-box">
+            <div class="result-row"><span class="label">총 납입액 (사업비 차감 전)</span><span class="val num" id="rMonTotal">$0</span></div>
+            <div class="result-row"><span class="label">월 사업비 (1개월분)</span><span class="val num" id="rMonFeeAmt">$0</span></div>
+            <div class="result-row highlight"><span class="label">순납입누계액 (사업비 차감, 이자 미적용)</span><span class="val num" id="rMonNetTotal">$0</span></div>
+            <div class="fx-row">
+              <label>납입완료 시점 원/달러 환율</label>
+              <input id="rMonFxNet" type="number" step="1" placeholder="예: 1350" oninput="calcRateMonthly()">
+              <span class="fx-result" id="rMonNetKRW">환율 입력 시 원화 환산 표시</span>
+            </div>
+            <div class="result-row highlight"><span class="label">적립금 계산 (공시이율 적용)</span><span class="val num" id="rMonFV">$0</span></div>
+            <div class="fx-row">
+              <label>만기 시점 원/달러 환율</label>
+              <input id="rMonFxFV" type="number" step="1" placeholder="예: 1350" oninput="calcRateMonthly()">
+              <span class="fx-result" id="rMonFVKRW">환율 입력 시 원화 환산 표시</span>
+            </div>
+          </div>
+          <div class="growth-viz">
+            <div class="bars">
+              <div class="gbar principal"><div class="stick" id="rMonBarP"></div><div class="glabel">순납입누계액</div><div class="gval" id="rMonBarPVal">$0</div></div>
+              <div class="gbar future"><div class="stick" id="rMonBarF"></div><div class="glabel">적립금(공시이율 적용)</div><div class="gval" id="rMonBarFVal">$0</div></div>
+            </div>
+          </div>
+          <p class="note">★ 월납입 연금은 보증형과 미보증형 연금상품으로 매월 적립하여 확정연금형으로 받아가는 연금상품입니다.<br>
+          순납입누계액 = (월납입액 − 월납입액×사업비) × 납입개월수 · 적립금은 이 순납입액이 매월 공시이율(연복리)로 부리되어 계산됩니다.</p>
+        </div>
+
+        <div class="row-btns">
+          <button class="btn btn-gold" onclick="showScreen('screen-final')">마무리 화면으로</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-choose')">이전단계</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 연금저축 · 펀드형(변액ETF) ============ -->
+  <section class="screen" id="screen-pension-fund">
+    <div class="shell">
+      <div class="subtabs">
+        <div class="subtab" onclick="showScreen('screen-protect')">보장이동</div>
+        <div class="subtab" onclick="showScreen('screen-pension-rate')">금리형</div>
+        <div class="subtab active">펀드형</div>
+      </div>
+      <div class="section-head">
+        <span class="pill-select">선택</span>
+        <h2>연금 · 저축 — 변액ETF 펀드형</h2>
+      </div>
+
+      <div class="term-toggle" style="max-width:420px;">
+        <div class="term-btn active" id="fundTypeStock" onclick="setFundType('stock')">미국주식형</div>
+        <div class="term-btn" id="fundTypeBond" onclick="setFundType('bond')">미국회사채권형</div>
+      </div>
+      <div class="term-toggle" style="max-width:340px;">
+        <div class="term-btn active" id="fundModeLump" onclick="setFundMode('lump')">일시납</div>
+        <div class="term-btn" id="fundModeMonthly" onclick="setFundMode('monthly')">월납</div>
+      </div>
+
+      <div class="card">
+        <div id="fundLumpBlock">
+          <div class="field">
+            <label for="fLumpAmt">예탁금액 (일시납, $)</label>
+            <input id="fLumpAmt" type="number" min="0" step="100" placeholder="예: 50000" oninput="calcFund()">
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="fLumpRate">예상 연수익율 (%, 편집 가능)</label>
+              <input id="fLumpRate" type="number" step="0.1" value="7.0" oninput="calcFund()">
+            </div>
+            <div class="field">
+              <label for="fLumpYears">거치기간 (년)</label>
+              <input id="fLumpYears" type="number" min="1" max="30" step="1" value="3" oninput="calcFund()">
+            </div>
+          </div>
+        </div>
+        <div id="fundMonthlyBlock" style="display:none;">
+          <div class="field">
+            <label for="fMonAmt">적립식 월납입액 ($)</label>
+            <input id="fMonAmt" type="number" min="0" step="10" placeholder="예: 300" oninput="calcFund()">
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="fMonRate">예상 연수익율 (%, 편집 가능)</label>
+              <input id="fMonRate" type="number" step="0.1" value="7.0" oninput="calcFund()">
+            </div>
+            <div class="field">
+              <label for="fMonYears">납입기간 (년)</label>
+              <input id="fMonYears" type="number" min="1" max="30" step="1" value="10" oninput="calcFund()">
+            </div>
+          </div>
+        </div>
+
+        <div class="result-box">
+          <div class="result-row" id="fTotalRow"><span class="label">총 납입액</span><span class="val num" id="fTotal">$0</span></div>
+          <div class="fx-row">
+            <label>납입완료 시점 원/달러 환율</label>
+            <input id="fFxTotal" type="number" step="1" placeholder="예: 1350" oninput="calcFund()">
+            <span class="fx-result" id="fTotalKRW">환율 입력 시 원화 환산 표시</span>
+          </div>
+          <div class="result-row"><span class="label">거치기간 대비 누적 수익율</span><span class="val num" id="fCum">0%</span></div>
+          <div class="result-row highlight"><span class="label">적립금 계산</span><span class="val num" id="fFV">$0</span></div>
+          <div class="fx-row">
+            <label>만기 시점 원/달러 환율</label>
+            <input id="fFxFV" type="number" step="1" placeholder="예: 1350" oninput="calcFund()">
+            <span class="fx-result" id="fFVKRW">환율 입력 시 원화 환산 표시</span>
+          </div>
+        </div>
+
+        <div class="growth-viz">
+          <div class="bars">
+            <div class="gbar principal"><div class="stick" id="fBarP"></div><div class="glabel">납입원금</div><div class="gval" id="fBarPVal">$0</div></div>
+            <div class="gbar future"><div class="stick" id="fBarF"></div><div class="glabel">예상 적립금</div><div class="gval" id="fBarFVal">$0</div></div>
+          </div>
+        </div>
+
+        <p class="note">★ 누적수익율은 과거 데이터 기반으로 예시된 수익율이며, 미래지표는 펀드별 수익율과 환율에 따라 금액이 차이가 있습니다. (예시금액)<br>
+        ★ 필요한 질병보장은 담당 설계사와 상담 후 결정하고 연령별 가입금액에 따라 보험료의 차이가 있습니다.</p>
+
+        <div class="row-btns">
+          <button class="btn btn-gold" onclick="openSuitabilityVar()">📄 변액적합성진단서 작성</button>
+          <button class="btn btn-primary" onclick="showScreen('screen-final')">마무리 화면으로</button>
+          <button class="btn btn-ghost" onclick="showScreen('screen-choose')">이전단계</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 부록첨부: DOLLAR ASSET STORYBOOK ============ -->
+  <section class="screen" id="screen-storybook">
+    <div class="shell" style="max-width:1040px;">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#2C4E85,var(--navy-2) 55%,var(--navy-3));">부록</span>
+        <h2>DOLLAR ASSET STORYBOOK — 생애주기별 세일즈 스토리텔링</h2>
+      </div>
+
+      <div class="storybook-progress">
+        <div class="storybook-progress-bar"><div class="storybook-progress-fill" id="sbProgressFill"></div></div>
+        <span id="sbProgressText">0 / 10 챕터 학습 완료</span>
+      </div>
+
+      <div class="storybook-layout">
+        <nav class="storybook-nav" id="sbNav"></nav>
+        <div class="storybook-content card" id="sbContent"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RP연습 ============ -->
+  <section class="screen" id="screen-rp">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#2C4E85,var(--navy-2) 55%,var(--navy-3));">부록</span>
+        <h2>고객 니즈별 RP(롤플레이) 스크립트 연습</h2>
+      </div>
+
+      <div class="card rp-card">
+        <div class="rp-icon">🎯</div>
+        <h3 class="rp-title">실전처럼 대화하며 상담 화법을 연습하세요</h3>
+        <p class="rp-desc">
+          고객의 니즈(자산을 키우고 싶은지 · 안정적으로 지키고 싶은지 · 가족에게 물려주고 싶은지)에 맞춰
+          실제 상담처럼 대화를 주고받으며 RP 스크립트를 연습할 수 있는 외부 AI 롤플레이 도구입니다.<br><br>
+          <b>DOLLAR ASSET STORYBOOK</b>의 "고객에게는 세 가지 질문만" 화법과 함께 활용하면
+          상담 흐름을 더 자연스럽게 익힐 수 있어요.
+        </p>
+        <button class="btn btn-primary rp-btn" onclick="window.open('https://share.gemini.google/GbjUJ23sl9yz', '_blank', 'noopener')">
+          🚀 RP 스크립트 연습 시작하기
+        </button>
+        <p class="rp-note">새 탭에서 열립니다 · 외부 서비스(Google Gemini)로 이동합니다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 보장분석 ============ -->
+  <section class="screen" id="screen-coverage">
+    <div class="shell">
+      <div class="section-head">
+        <span class="pill-select" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2));">부록</span>
+        <h2>보장분석</h2>
+      </div>
+
+      <div class="card rp-card">
+        <div class="rp-icon">🛡️</div>
+        <h3 class="rp-title">고객의 보장 현황을 분석해 보세요</h3>
+        <p class="rp-desc">
+          기존 가입 보험을 정리하고 보장 공백을 확인할 수 있는 보장분석 도구입니다.<br><br>
+          외부 페이지에서 열립니다.
+        </p>
+        <button class="btn btn-primary rp-btn" onclick="window.open('https://claude.ai/public/artifacts/434b03fb-e19a-4226-b570-3d8e15bb5934', '_blank', 'noopener')">
+          🔍 보장분석 시작하기
+        </button>
+        <p class="rp-note">새 탭에서 열립니다 · 외부 서비스로 이동합니다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="screen" id="screen-final">
+    <div class="final-wrap">
+      <div class="hero-eyebrow" style="color:var(--gold-light);">FINAL STEP</div>
+      <h2>이제 달러로 준비하세요</h2>
+      <p class="sub">달러로 모으고 굴리고 지키기 → 수익성, 안전성, 유동성, 비과세 혜택까지</p>
+
+      <div class="final-cards">
+        <div class="final-card">
+          <h4>보장 — 질병보장에서 사망보장까지</h4>
+          <p>종신보험 기반으로 보장의 크기가 자산의 크기와 함께 커집니다. 사망보험금과 생활비 지급을 하나의 설계로 준비합니다.</p>
+        </div>
+        <div class="final-card">
+          <h4>저축 — 자산을 키우고 굴리기</h4>
+          <p>연금·미래자산준비 상품으로 미래가치가 커지고, 든든한 미래 자산과 세제 혜택까지 함께 준비할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <ul class="perk-list">
+        <li><b>보장</b> — 보장의 크기가 달라집니다.</li>
+        <li><b>연금 · 미래자산준비</b> — 미래가치가 커집니다.</li>
+        <li><b>연금 · 미래자산준비</b> — 든든한 미래 자산을 준비할 수 있습니다.</li>
+        <li><b>연금 · 미래자산준비</b> — 세제 혜택까지 든든하게 준비!!!</li>
+      </ul>
+
+      <div class="final-nav">
+        <button class="btn btn-primary" onclick="goHome()">홈으로</button>
+        <button class="btn" style="background:linear-gradient(180deg,#C43647,var(--crimson) 55%,var(--crimson-2)); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.2);" onclick="showScreen('screen-protect')">보장화면</button>
+        <button class="btn" style="background:linear-gradient(180deg,#2C4E85,var(--navy-2) 55%,var(--navy-3)); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.2);" onclick="showScreen('screen-pension-rate')">연금화면</button>
+      </div>
+    </div>
+  </section>
+  </div><!-- /page with-tabs -->
+</div><!-- /pageWrap -->
+</div><!-- /appRoot -->
+
+<script>
+/* ---------------- 계약자 정보 확인서 (외화 / 변액) ---------------- */
+const FX_QUESTIONS = [
+  {n:1, type:'single', name:'fx_q1', text:'고객님께서 가입하고자 하는 금융상품은 어떤 것입니까?',
+    options:['예금·적금','주식·채권 등 금융투자상품','일반보험','변액보험','외화보험']},
+  {n:2, type:'single', name:'fx_q2', text:'고객님의 해당 금융상품 가입목적은 무엇입니까?',
+    options:['환율 변동에 따른 재산 증식 등 단기적인 이익 취득 목적','장기 저축을 통한 목돈 마련','노후를 위한 연금자산 마련','위험에 대비한 보장자산(외화) 마련']},
+  {n:3, type:'multi', name:'fx_q3', text:'고객님이 해당 금융상품 가입목적 등을 감안하여, "외화보험"을 가입하고 실제 어떻게 활용하실 계획입니까?', note:'(복수선택 가능)',
+    options:['향후 해외 거주할 예정이며, 준비 또는 생활자금 등으로 활용','가끔 해외여행경비로 활용','장기의 미래에 본인 생활자금 또는 유학계획이 있는 자녀 생활자금 등으로 활용','장기의 미래에 유족 등에게 외화자산 상속 등 보장자산으로 활용','안정적 재산증식 수단으로 손실가능성이 없는 외화를 활용','외화 보장자산 확보를 통한 보장자산 다각화 등 미래 위험분산에 활용']},
+  {n:4, type:'single', name:'fx_q4', text:'고객님의 월평균 소득은 어느 정도입니까?', note:'(※청약시에도 반영되는 사항으로 정확히 제공하여 주시기 바랍니다.)',
+    options:['200만원 미만','200만원 이상','500만원 이상','1,000만원 이상']},
+  {n:5, type:'single', name:'fx_q5', text:'고객님의 월평균 소득에서 보험료 지출이 차지하는 비중은 어느 정도입니까?',
+    options:['10% 미만','20% 미만','30% 미만','50% 미만','50% 이상']},
+  {n:6, type:'single', name:'fx_q6', text:'고객님의 현재 소득, 순자산 수준에서 보험료(월납 기준)로 추가 납부하실 수 있는 금액은 어느 정도입니까?',
+    options:['10만원 미만','30만원 미만','50만원 미만','100만원 미만','100만원 이상']},
+  {n:7, type:'single', name:'fx_q7', text:'퇴직 등 향후 수입 감소 등을 감안한 고객님의 보험료 납입 가능기간은 어느 정도입니까?',
+    options:['3년 미만','3년 이상 7년 미만','7년 이상 10년 미만','10년 이상 20년 미만','20년 이상']},
+  {n:8, type:'single', name:'fx_q8', text:'고객님께서 생각하시는 보험계약의 유지기간은 어느 정도 입니까?',
+    options:['5년 미만','5년 이상 7년 미만','7년 이상 10년 미만','10년이상 20년 미만','20년이상 30년 미만','30년 이상']},
+  {n:9, type:'single', name:'fx_q9', text:'자녀결혼, 주택구입 등 자금수요로 보험계약을 10년 이전에 중도해지 할 가능성은 어느 정도라고 예상하십니까?',
+    options:['매우 낮음(30% 미만)','낮음(30% 이상)','가능성이 있음(50% 이상)','높음(70% 이상)','매우 높음(90% 이상)']},
+  {n:10, type:'multi', name:'fx_q10', text:'고객님께서 취득·처분한 경험이 있는 외화 금융상품을 모두 골라주세요.', note:"(복수선택 가능하나 '① 가입경험 없음'과 복수선택 불가)",
+    options:['가입경험 없음','외화예금','외화펀드','해외주식','외화저축성보험','외화보장성보험','기타'], exclusiveIndex:0},
+  {n:11, type:'single', name:'fx_q11', text:'상기 외화금융상품에 대한 가입기간은 어느 정도입니까?',
+    options:['가입경험 없음','6개월 미만','1년 미만','2년 미만','2년 이상']},
+  {n:12, type:'single', name:'fx_q12', text:'고객님께서는 금융상품에 가입하실 때, 원금보존과 수익률 중 어느 쪽을 중요하게 생각하십니까?',
+    options:['원금은 반드시 보존되어야 한다.','원금보존을 중요하게 생각한다.','수익률이 어느 정도 되어야 한다.','수익률을 중요시 한다.']},
+  {n:13, type:'single', name:'fx_q13', text:'고객님께서는 금융상품 가입시 일정 수준의 수익률을 얻기 위해 원금 기준 어느 정도의 손실을 감내하실 수 있습니까?',
+    options:['어떠한 경우에도 손실이 나면 안된다.','10% 이내','20% 이내','30% 이내','50% 이내','100% 수준도 감수']},
+  {n:14, type:'single', name:'fx_q14', text:'고객님께서는 외화보험 등 금융상품의 구조와 위험에 대해 이해하는 수준이 어느 정도입니까?',
+    options:['이해수준이 현저히 낮음','일정 부분 이해','전체적으로 잘 이해']},
+];
+
+const VAR_QUESTIONS = [
+  {n:1, type:'single', name:'var_q1', text:'고객님께서 가입을 원하는 금융상품은 어떤 것입니까?',
+    options:['예금·적금','주식·채권 등 금융투자상품','일반보험','변액보험']},
+  {n:2, type:'single', name:'var_q2', text:'고객님께서 보험을 가입하는 목적은 어디에 가장 가까우십니까?',
+    options:['단기 재산증식','장기저축을 통한 목돈 마련','노후를 위한 연금자산 마련','위험에 대비한 가족의 보장자산 마련']},
+  {n:3, type:'single', name:'var_q3', text:'고객님의 월평균 소득은 어느 정도입니까?', note:'(※청약시에도 반영되는 사항으로 정확히 제공하여 주시기 바랍니다.)',
+    options:['200만원 미만','200만원 이상','500만원 이상','1,000만원 이상']},
+  {n:4, type:'single', name:'var_q4', text:'고객님의 월평균 소득에서 보험료 지출이 차지하는 비중은 어느 정도입니까?',
+    options:['10% 미만','20% 미만','30% 미만','50% 미만','50% 이상']},
+  {n:5, type:'single', name:'var_q5', text:'고객님께서 보험료 재원으로 사용할 수 있는 순자산(자산-부채)은 어느 정도입니까?',
+    options:['1천만원 미만','5천만원 미만','1억원 미만','1억원 이상']},
+  {n:6, type:'single', name:'var_q6', text:'고객님의 현재 소득, 순자산 수준에서 보험료(월납 기준)로 추가 납부하실 수 있는 금액은 어느 정도입니까?',
+    options:['10만원 미만','30만원 미만','50만원 미만','100만원 미만','100만원 이상']},
+  {n:7, type:'single', name:'var_q7', text:'퇴직 등 향후 수입원 감소 등을 감안한 고객님의 보험료 납입 가능 기간은 어느 정도입니까?',
+    options:['3년 미만','7년 미만','10년 미만','20년 미만','20년 이상']},
+  {n:8, type:'single', name:'var_q8', text:'고객님께서 생각하시는 보험계약의 유지 기간은 어느 정도입니까?',
+    options:['7년 미만','10년 미만','20년 미만','30년 미만','30년 이상']},
+  {n:9, type:'single', name:'var_q9', text:'자녀결혼, 주택구입 등 자금수요로 보험계약을 10년 이전에 중도해지할 가능성은 어느 정도라고 예상하십니까?',
+    options:['30% 미만','50% 미만','70% 미만','90% 미만','90% 이상']},
+  {n:10, type:'single', name:'var_q10', text:'고객님의 펀드, 변액보험 등 금융투자상품 투자경험 기간은 어느 정도입니까?',
+    options:['투자경험 없음','6개월 미만','1년 미만','2년 미만','2년 이상']},
+  {n:11, type:'multi', name:'var_q11', text:'고객님께서 취득·처분한 경험이 있는 상품을 모두 골라주세요.', note:"(복수선택 가능, '⑥ 투자경험 없음' 선택시 복수선택 불가)",
+    options:[
+      '주식(관리종목·투자위험종목), 주식형펀드(고수익 추구), 선물옵션, ELW 등 매우높은위험 상품',
+      '주식(일반종목), 주식형펀드(시장수익률 추구), ELS/DLS(원금비보장), 채권(BBB- 이하) 등 다소높은위험 상품',
+      '혼합형 펀드, CP/전단채(A4~A2), 채권(BBB0~BBB+), ELS(원금일부보장) 등 보통위험 상품',
+      '채권형 펀드, 금융채, 채권(A- 이상), ELB/DLB(원금보장), CP/전단채(A2+ 이상) 등 낮은위험 상품',
+      '변액보험(보통위험 상품)','투자경험 없음'
+    ], exclusiveIndex:5},
+  {n:12, type:'single', name:'var_q12', text:'고객님께서는 투자하실 때 원금 보존과 투자수익률 중 어느 쪽을 중요하게 생각하십니까?',
+    options:['원금은 반드시 보존','원금 보존이 중요','수익률을 어느 정도 기대','수익률을 중요시']},
+  {n:13, type:'single', name:'var_q13', text:'고객님께서는 투자 상품을 가입하실 때 어느 정도의 연간 수익률을 기대하십니까?',
+    options:['3% 이내','7% 이내','10% 이내','15% 이내','15% 초과']},
+  {n:14, type:'single', name:'var_q14', text:'고객님께서는 투자 수익률을 얻기 위해 원금 대비 어느 정도의 손실을 감내할 수 있습니까?',
+    options:['어떠한 경우에도 손실이 나면 안된다.','10% 이내 감수','20% 이내 감수','30% 이내 감수','40% 이내 감수','50% 이내 감수','100% 수준도 감수할 수 있다.']},
+  {n:15, type:'single', name:'var_q15', text:'고객님께서는 특별계정 펀드 내 주식이나 주식형 상품의 비중을 어느 정도로 구성하고 싶으십니까?',
+    options:['5% 미만','10% 미만','20% 미만','50% 미만','50% 이상']},
+  {n:16, type:'single', name:'var_q16', text:'고객님께서 보유하고 있는 금융상품 중에 변액보험 및 투자상품이 차지하는 비중은 어느 정도 입니까?',
+    options:['없음','30% 미만','50% 미만','50% 이상']},
+  {n:17, type:'single', name:'var_q17', text:'고객님의 변액보험 등 금융상품의 구조와 위험에 대한 이해 수준은 어느 정도라고 생각하십니까?',
+    options:['현저히 낮음','일정 부분 이해','전체적으로 잘 이해']},
+];
+
+function renderQuestions(containerId, questions){
+  const container = document.getElementById(containerId);
+  container.innerHTML = questions.map(q => {
+    const inputType = q.type === 'multi' ? 'checkbox' : 'radio';
+    const opts = q.options.map((opt, i) => {
+      const exclusiveAttr = (q.exclusiveIndex === i) ? 'data-exclusive="1"' : '';
+      return `<label><input type="${inputType}" name="${q.name}" value="${opt.replace(/"/g,'&quot;')}" ${exclusiveAttr} onclick="handleOptionClick(this)"> ${opt}</label>`;
+    }).join('');
+    return `<div class="doc-q">
+      <p class="q-text">${q.n}. ${q.text}${q.note ? ` <span class="q-note">${q.note}</span>` : ''}</p>
+      <div class="opt-row">${opts}</div>
+    </div>`;
+  }).join('');
+}
+
+function handleOptionClick(el){
+  if(el.type !== 'checkbox') return;
+  const name = el.name;
+  const group = document.querySelectorAll(`input[name="${name}"]`);
+  const isExclusive = el.dataset.exclusive === '1';
+  if(isExclusive && el.checked){
+    group.forEach(o => { if(o !== el) o.checked = false; });
+  } else if(!isExclusive && el.checked){
+    group.forEach(o => { if(o.dataset.exclusive === '1') o.checked = false; });
+  }
+}
+
+function fillTodayDate(prefix){
+  const today = new Date();
+  document.getElementById(prefix+'Year').value = today.getFullYear();
+  document.getElementById(prefix+'Month').value = today.getMonth()+1;
+  document.getElementById(prefix+'Day').value = today.getDate();
+}
+
+function openSuitability(){
+  const name = document.getElementById('cName').value.trim();
+  const birth = document.getElementById('cBirth').value.trim();
+  if(name) document.getElementById('fxName').value = name;
+  fillTodayDate('fx');
+  document.getElementById('fxValidateMsg').textContent = '';
+  showScreen('screen-suitability');
+}
+
+function openSuitabilityVar(){
+  const name = document.getElementById('cName') ? document.getElementById('cName').value.trim() : '';
+  if(name) document.getElementById('varName').value = name;
+  fillTodayDate('var');
+  document.getElementById('varValidateMsg').textContent = '';
+  showScreen('screen-suitability-var');
+}
+
+function validateDoc(key, questions){
+  const missing = [];
+  const nameEl = document.getElementById(key+'Name');
+  const ageEl = document.getElementById(key+'Age');
+  [nameEl, ageEl].forEach(el => el.classList.remove('field-missing'));
+  if(!nameEl.value.trim()){ missing.push('계약자(법인)명'); nameEl.classList.add('field-missing'); }
+  if(!ageEl.value){ missing.push('연령'); ageEl.classList.add('field-missing'); }
+  if(!document.querySelector(`input[name="${key}Vulnerable"]:checked`)) missing.push('취약금융소비자 해당여부');
+  questions.forEach(q => {
+    const checked = document.querySelector(`input[name="${q.name}"]:checked`);
+    if(!checked) missing.push(`${q.n}번 문항`);
+  });
+  if(!document.getElementById(key+'Consent1').checked) missing.push('개인정보처리 동의');
+  if(!document.getElementById(key+'Consent2').checked) missing.push('고객확인사항 확인');
+  return missing;
+}
+
+function saveDocPDF(key){
+  const questions = key === 'fx' ? FX_QUESTIONS : VAR_QUESTIONS;
+  const screenId = key === 'fx' ? 'screen-suitability' : 'screen-suitability-var';
+  const msgEl = document.getElementById(key+'ValidateMsg');
+  const missing = validateDoc(key, questions);
+  if(missing.length){
+    msgEl.innerHTML = `<b>다음 항목을 확인해 주세요:</b> ${missing.join(', ')}`;
+    msgEl.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  msgEl.textContent = '';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('print-active'));
+  document.getElementById(screenId).classList.add('print-active');
+  document.body.classList.add('print-suitability');
+  setTimeout(() => window.print(), 50);
+}
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('print-suitability');
+});
+
+renderQuestions('fxQuestions', FX_QUESTIONS);
+renderQuestions('varQuestions', VAR_QUESTIONS);
+
+/* ---------------- 부록첨부: STORYBOOK ---------------- */
+const STORYBOOK = [
+  { tag:'PROLOGUE', title:'달러보험을 설명하기 전에', blocks:[
+    {type:'p', text:"상품보다 먼저 고객의 삶에서 '왜 필요한가'를 이야기합니다."},
+    {type:'p', text:"우리는 매일 원화로 벌고, 원화로 쓰고, 원화로 저축합니다. 그래서 자산도 자연스럽게 원화 중심이 됩니다."},
+    {type:'p', text:"하지만 아이의 미래, 은퇴 후 생활, 가족에게 남길 자산은 서로 다른 역할을 가질 수 있습니다."},
+    {type:'quote', text:"달러를 사는 것이 목적이 아닙니다. 미래의 목적에 맞는 자산의 역할을 만드는 것입니다."},
+    {type:'tags', text:'GROW · 키우다&nbsp;&nbsp;|&nbsp;&nbsp;STABLE · 지키다&nbsp;&nbsp;|&nbsp;&nbsp;TRANSFER · 물려주다'},
+  ]},
+  { tag:'01 | FAMILY', title:'아이에게 남기는 첫 번째 글로벌 자산', blocks:[
+    {type:'p', text:"어린 자녀를 둔 부모에게는 '교육비'보다 더 긴 시간의 이야기가 필요합니다."},
+    {type:'p', text:"아이를 키우는 부모에게 가장 큰 걱정은 지금의 교육비만이 아닙니다. 10년 후, 15년 후, 20년 후 아이가 사회에 나가는 순간까지 준비해야 할 미래가 보입니다."},
+    {type:'quote', text:"아이의 미래를 준비하는 돈이라면, 원화만 가지고 있어야 할까요?"},
+    {type:'p', text:"달러 변액·ETF는 장기적인 글로벌 성장자산의 역할을, 달러 금리형 연금은 특정 시점의 미래자금 준비를, 달러종신은 부모의 보장과 가족에게 이전할 자산이라는 역할을 생각해 볼 수 있습니다."},
+    {type:'closing', text:"아이에게 돈을 물려주는 것도 중요하지만, 아이가 자랄 시간만큼 함께 성장하는 자산을 만들어주는 것도 부모의 준비입니다."},
+  ]},
+  { tag:'02 | 20-30', title:'월급의 일부를 미래의 나에게 보내는 방법', blocks:[
+    {type:'p', text:"젊은 직장인에게 보험보다 먼저 전달할 단어는 '미래자산'입니다."},
+    {type:'p', text:"20~30대에는 월급이 들어오면 사용할 곳이 많습니다. 여행, 자동차, 자기계발, 결혼, 주택. 대부분의 돈은 현재의 나를 위해 쓰입니다."},
+    {type:'quote', text:"지금의 나에게 쓰는 월급은 있는데, 10년 후의 나에게 보내는 월급은 있나요?"},
+    {type:'p', text:"매월 소득의 일부를 달러자산으로 옮기는 것은 한 번에 큰돈을 만드는 방법보다 '시간을 내 편으로 만드는 습관'이라는 관점에서 접근합니다."},
+    {type:'closing', text:"20대와 30대의 가장 큰 자산은 돈이 아니라 시간입니다."},
+  ]},
+  { tag:'03 | 40-50', title:'노후자산의 일부를 달러로 바꾸다', blocks:[
+    {type:'p', text:"이 시기의 핵심은 '더 많이 버는 것'에서 '이미 만든 자산을 어떻게 지킬 것인가'로 이동합니다."},
+    {type:'p', text:"40~50대에는 집, 예금, 투자자산, 연금 등 여러 자산이 생깁니다. 이때는 모든 자산을 하나의 통화와 하나의 방식으로만 보유하기보다 역할과 통화를 분산하는 관점이 중요해집니다."},
+    {type:'quote', text:"노후자금 100%를 원화로 가지고 있어야 할 이유가 있을까요?"},
+    {type:'p', text:"달러 금리형 연금은 안정적인 노후자금의 한 축으로, 달러 종신은 단기납을 활용한 보장과 자산이전의 한 축으로 검토할 수 있습니다."},
+    {type:'closing', text:"40~50대의 자산관리는 더 많이 버는 것만큼, 이미 만든 자산을 어떻게 지키고 어디에 배치할 것인가가 중요합니다."},
+  ]},
+  { tag:'04 | 60+', title:'내가 쓰고, 남은 것은 가족에게', blocks:[
+    {type:'p', text:"은퇴 이후에는 '얼마나 모을까'에서 '어떻게 사용할까'로 질문이 바뀝니다."},
+    {type:'p', text:"생활에 사용할 돈, 보유할 돈, 가족에게 남길 돈. 자산의 역할을 나누어 생각하면 노후자산의 구조가 선명해집니다."},
+    {type:'quote', text:"내가 쓰고 남은 자산은 어떻게 가족에게 전달할 것인가?"},
+    {type:'p', text:"달러 금리형은 안정적인 자산 역할을, 달러 종신은 가족에게 이전할 자산과 종신보장의 역할을 검토할 수 있습니다."},
+    {type:'closing', text:"노후자산은 내가 잘 쓰는 것도 중요하지만, 마지막까지 누구에게 어떻게 전달할 것인지까지 설계해야 완성됩니다."},
+  ]},
+  { tag:'05 | PRODUCT', title:'달러 변액·ETF — 달러로 세계에 투자하다', blocks:[
+    {type:'p', text:"달러를 사는 것이 아니라 달러를 통해 글로벌 자산에 연결하는 이야기입니다."},
+    {type:'quote', text:"내 돈이 한국에서만 일하게 할 것인가, 세계에서도 일하게 할 것인가?"},
+    {type:'p', text:"원화소득을 기반으로 살아가더라도 자산의 일부는 글로벌 시장에 연결할 수 있습니다. 달러를 기반으로 글로벌 ETF 등에 투자하는 구조는 장기적인 성장 가능성을 추구하는 선택지입니다."},
+    {type:'flow', text:'원화 → 달러 → 글로벌 자산'},
+    {type:'footnote', text:'※ 변액·ETF 투자형은 투자실적에 따라 변동될 수 있으며 원금손실 가능성, 비용 및 환율 변동 등을 상품별로 확인해야 합니다.'},
+  ]},
+  { tag:'06 | PRODUCT', title:'달러 금리형 연금 — 10년 후의 나에게 보내는 약속', blocks:[
+    {type:'p', text:"성장자산과 함께 안정적으로 준비하는 자산의 역할을 이야기합니다."},
+    {type:'quote', text:"노후자금까지 모두 시장에 맡겨야 할까요?"},
+    {type:'p', text:"10년이라는 기간을 기준으로 노후자금 목표를 세우고, 상품의 보증·적용이율·환율 관련 조건을 확인하는 방식으로 접근합니다."},
+    {type:'quote', text:"노후자산은 많이 버는 것만큼, 필요한 시점에 지켜져 있는 것이 중요합니다."},
+    {type:'footnote', text:'※ 특정 상품의 환급률이나 130% 등의 수치는 상품별 조건에 따라 달라질 수 있으므로 최신 상품설명서·공시자료를 기준으로 안내합니다.'},
+  ]},
+  { tag:'07 | PRODUCT', title:'달러 종신 — 짧게 준비하고 오래 가져가는 자산', blocks:[
+    {type:'p', text:"단기납 구조와 종신보장의 역할을 함께 설명합니다."},
+    {type:'quote', text:"보험료를 얼마나 오래 내느냐보다, 얼마나 짧은 기간에 준비를 끝내고 얼마나 오래 활용할 수 있는지를 생각해 보신 적 있으세요?"},
+    {type:'p', text:"5년 또는 7년 납입과 같은 단기납 구조를 활용해 납입기간을 짧게 가져가고 이후 장기 보유하는 전략을 검토할 수 있습니다. 종신보험의 사망보장과 함께 자산이전의 역할까지 설명합니다."},
+    {type:'flow', text:'짧게 납입 → 오래 보유 → 보장 + 자산이전'},
+    {type:'footnote', text:'※ 환급률은 가입연령, 납입기간, 성별, 상품조건, 경과기간 등에 따라 달라질 수 있으므로 실제 설계서 기준으로 확인합니다.'},
+  ]},
+  { tag:'08 | SALES FLOW', title:'고객에게는 세 가지 질문만', blocks:[
+    {type:'p', text:'상품을 먼저 설명하지 않고 고객의 목적부터 찾습니다. 이 질문 하나로 고객의 답변에 따라 상품을 자연스럽게 연결할 수 있습니다.'},
+    {type:'sales3', items:[
+      {n:'01', label:'키우기', q:'달러 자산을 키우고 싶으세요?', to:'변액·ETF 중심'},
+      {n:'02', label:'지키기', q:'안정적으로 확보하고 싶으세요?', to:'금리형 연금 중심'},
+      {n:'03', label:'물려주기', q:'가족에게 남기고 싶으세요?', to:'달러 종신 중심'},
+    ]},
+  ]},
+  { tag:'09 | PORTFOLIO', title:'하나의 상품이 아니라 하나의 전략', blocks:[
+    {type:'p', text:'성장 → 안정 → 이전으로 이어지는 생애주기형 달러자산 포트폴리오'},
+    {type:'quote', text:'20대에는 키우고 · 40대에는 지키고 · 60대에는 물려주는 것.'},
+    {type:'portfolio', items:[
+      {label:'GROW', product:'달러 변액·ETF', role:'글로벌 성장자산', color:'var(--green)'},
+      {label:'STABLE', product:'달러 금리형 연금', role:'노후 안정자산', color:'var(--navy)'},
+      {label:'TRANSFER', product:'달러 종신', role:'보장 + 자산이전', color:'var(--crimson)'},
+    ]},
+    {type:'footnote', text:'실제 가입 가능 여부, 보장내용, 환급률, 적용이율, 비용, 환율 및 투자위험은 해당 보험사의 최신 상품자료로 확인합니다.'},
+  ]},
+];
+
+let sbCurrent = 0;
+const SB_DONE_KEY = 'dabStorybookDone';
+
+function getSbDone(){
+  try{ return JSON.parse(localStorage.getItem(SB_DONE_KEY) || '[]'); }catch(e){ return []; }
+}
+function setSbDone(arr){
+  try{ localStorage.setItem(SB_DONE_KEY, JSON.stringify(arr)); }catch(e){}
+}
+function toggleSbDone(idx){
+  let done = getSbDone();
+  done = done.includes(idx) ? done.filter(x => x !== idx) : [...done, idx];
+  setSbDone(done);
+  renderStorybookNav();
+  updateSbProgress();
+}
+function updateSbProgress(){
+  const done = getSbDone();
+  const total = STORYBOOK.length;
+  const p = total ? Math.round((done.length/total)*100) : 0;
+  document.getElementById('sbProgressFill').style.width = p + '%';
+  document.getElementById('sbProgressText').textContent = `${done.length} / ${total} 챕터 학습 완료`;
+}
+function renderStorybookNav(){
+  const done = getSbDone();
+  document.getElementById('sbNav').innerHTML = STORYBOOK.map((ch,i) => `
+    <div class="storybook-nav-item ${i===sbCurrent?'active':''}" onclick="renderStorybookChapter(${i})">
+      <div><span class="snav-tag">${ch.tag}</span>${ch.title}</div>
+      ${done.includes(i) ? '<span class="snav-done">✓</span>' : ''}
+    </div>`).join('');
+}
+function sbBlockHTML(b){
+  switch(b.type){
+    case 'p': return `<p class="sb-p">${b.text}</p>`;
+    case 'quote': return `<div class="sb-quote">"${b.text}"</div>`;
+    case 'tags': return `<div class="sb-tags">${b.text}</div>`;
+    case 'flow': return `<div class="sb-flow">${b.text}</div>`;
+    case 'footnote': return `<p class="sb-footnote">${b.text}</p>`;
+    case 'closing': return `<div class="sb-closing-box"><span class="sb-closing-label">상담클로징</span><div class="sb-closing-text">"${b.text}"</div></div>`;
+    case 'sales3': return `<div class="sb-sales3">${b.items.map(it => `
+      <div class="sb-sales3-item"><div class="n">${it.n}</div><div class="label">${it.label}</div><div class="q">"${it.q}"</div><div class="to">→ ${it.to}</div></div>`).join('')}</div>`;
+    case 'portfolio': return `<div class="sb-portfolio">${b.items.map(it => `
+      <div class="sb-portfolio-item" style="background:${it.color};"><div class="plabel">${it.label}</div><div class="pproduct">${it.product}</div><div class="prole">${it.role}</div></div>`).join('')}</div>`;
+    default: return '';
+  }
+}
+function renderStorybookChapter(idx, scroll){
+  sbCurrent = idx;
+  const ch = STORYBOOK[idx];
+  const done = getSbDone();
+  document.getElementById('sbContent').innerHTML = `
+    <div class="sb-tag">${ch.tag}</div>
+    <div class="sb-title">${ch.title}</div>
+    ${ch.blocks.map(sbBlockHTML).join('')}
+    <label class="agree-check" style="margin-top:24px; display:inline-flex;">
+      <input type="checkbox" ${done.includes(idx)?'checked':''} onclick="toggleSbDone(${idx})"> 이 챕터 학습 완료로 표시
+    </label>
+    <div class="row-btns" style="margin-top:20px;">
+      <button class="btn btn-ghost" ${idx===0?'disabled':''} onclick="renderStorybookChapter(${idx-1}, true)">← 이전 챕터</button>
+      <button class="btn btn-primary" ${idx===STORYBOOK.length-1?'disabled':''} onclick="renderStorybookChapter(${idx+1}, true)">다음 챕터 →</button>
+    </div>`;
+  renderStorybookNav();
+  updateSbProgress();
+  if(scroll){
+    document.getElementById('sbContent').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+function openStorybook(){
+  showScreen('screen-storybook');
+  renderStorybookChapter(sbCurrent || 0);
+}
+
+/* ---------------- auth gate ---------------- */
+const APPROVED_PHONE = '01048741273'; // 010-4874-1273 (숫자만 비교)
+const AUTH_KEY = 'dabVerified';
+let pendingEmailCode = null;
+let pendingEmail = null;
+let authMethod = 'phone';
+
+function normalizePhone(v){ return (v||'').replace(/[^0-9]/g,''); }
+function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim()); }
+
+function setAuthMethod(m){
+  authMethod = m;
+  document.getElementById('authTabPhone').classList.toggle('active', m==='phone');
+  document.getElementById('authTabEmail').classList.toggle('active', m==='email');
+  document.getElementById('authPhoneBlock').style.display = m==='phone' ? 'block':'none';
+  document.getElementById('authEmailBlock').style.display = m==='email' ? 'block':'none';
+}
+
+function unlockApp(){
+  try{ localStorage.setItem(AUTH_KEY, '1'); }catch(e){}
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+}
+
+function verifyPhone(){
+  const input = normalizePhone(document.getElementById('authPhoneInput').value);
+  const msg = document.getElementById('authPhoneMsg');
+  if(input.length < 9){
+    msg.textContent = '휴대폰 번호를 정확히 입력해 주세요.';
+    msg.classList.remove('success');
+    return;
+  }
+  if(input === APPROVED_PHONE){
+    msg.textContent = '본인확인이 완료되었습니다. 잠시 후 시작합니다…';
+    msg.classList.add('success');
+    setTimeout(unlockApp, 500);
+  } else {
+    msg.textContent = '등록된 번호와 일치하지 않습니다. 담당 설계사에게 등록 번호를 확인해 주세요.';
+    msg.classList.remove('success');
+  }
+}
+
+function sendEmailCode(){
+  const email = document.getElementById('authEmailInput').value.trim();
+  const msg = document.getElementById('authEmailMsg');
+  if(!isValidEmail(email)){
+    msg.textContent = '올바른 이메일 주소를 입력해 주세요.';
+    return;
+  }
+  pendingEmail = email;
+  pendingEmailCode = String(Math.floor(100000 + Math.random()*900000));
+  document.getElementById('authCodeDisplay').textContent = pendingEmailCode;
+  document.getElementById('authEmailStep1').style.display = 'none';
+  document.getElementById('authEmailStep2').style.display = 'block';
+  msg.textContent = '';
+
+  const subject = encodeURIComponent('[달러자산 만들기] 본인확인 코드');
+  const body = encodeURIComponent(
+    `아래 인증코드를 앱 화면에 입력해 주세요.\n\n인증코드: ${pendingEmailCode}\n\n본인이 요청하지 않았다면 이 메일을 무시하세요.`
+  );
+  try{
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  }catch(e){}
+}
+
+function verifyEmailCode(){
+  const input = document.getElementById('authCodeInput').value.trim();
+  const msg = document.getElementById('authEmailMsg');
+  if(pendingEmailCode && input === pendingEmailCode){
+    msg.textContent = '본인확인이 완료되었습니다. 잠시 후 시작합니다…';
+    msg.classList.add('success');
+    setTimeout(unlockApp, 500);
+  } else {
+    msg.textContent = '인증코드가 일치하지 않습니다. 화면에 표시된 코드를 다시 확인해 주세요.';
+    msg.classList.remove('success');
+  }
+}
+
+function resetEmailStep(){
+  pendingEmailCode = null;
+  document.getElementById('authEmailStep1').style.display = 'block';
+  document.getElementById('authEmailStep2').style.display = 'none';
+  document.getElementById('authCodeInput').value = '';
+  document.getElementById('authEmailMsg').textContent = '';
+}
+
+(function initAuthGate(){
+  let already = false;
+  try{ already = localStorage.getItem(AUTH_KEY) === '1'; }catch(e){}
+  if(already){
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
+  }
+})();
+
+/* ---------------- state ---------------- */
+let customer = null;
+let protectTerm = 5;
+let rateMode = 'lump';
+let fundMode = 'lump';
+let fundType = 'stock';
+const fundDefaults = { stock: 7.0, bond: 4.0 };
+
+function fmt(n){
+  if(!isFinite(n)) n = 0;
+  const rounded = Math.round(n);
+  return '$' + rounded.toLocaleString('en-US');
+}
+function pct(n){
+  if(!isFinite(n)) n = 0;
+  return n.toFixed(1) + '%';
+}
+function fmtKRW(n){
+  if(!isFinite(n)) n = 0;
+  return Math.round(n).toLocaleString('ko-KR') + '원';
+}
+
+/* ---------------- navigation ---------------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  const tabs = document.getElementById('tabs');
+  if(id === 'screen-home'){
+    tabs.classList.remove('show');
+  } else {
+    tabs.classList.add('show');
+  }
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.target === id);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  if(id==='screen-protect') calcProtect();
+  if(id==='screen-pension-rate'){ calcRateLump(); calcRateMonthly(); }
+  if(id==='screen-pension-fund') calcFund();
+}
+function goHome(){ showScreen('screen-home'); }
+
+/* ---------------- customer ---------------- */
+/* ---------------- 달러 니즈 환기 ---------------- */
+function selectVs(el, groupId){
+  document.querySelectorAll(`.needs-vs-row[data-group="${groupId}"] .needs-vs-box`).forEach(box => box.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveCustomer(){
+  const name = document.getElementById('cName').value.trim();
+  customer = {
+    name: name,
+    birth: document.getElementById('cBirth').value.trim(),
+    phone: document.getElementById('cPhone').value.trim(),
+    addr: document.getElementById('cAddr').value.trim(),
+    goal: document.getElementById('cGoal').value.trim(),
+  };
+  const chip = document.getElementById('clientChip');
+  const chipText = document.getElementById('clientChipText');
+  if(name){
+    chipText.textContent = name + '님 상담중';
+    chip.classList.add('show');
+  }
+  const summary = document.getElementById('chooseSummary');
+  if(name || customer.goal){
+    summary.innerHTML = `<div class="summary-strip">
+      ${name ? `<span><b>고객명</b> ${name}</span>` : ''}
+      ${customer.goal ? `<span><b>가입목적</b> ${customer.goal}</span>` : ''}
+    </div>`;
+  }
+  showScreen('screen-choose');
+}
+
+/* ---------------- 보장자산 ---------------- */
+function setTerm(el, t){
+  document.querySelectorAll('#screen-protect .term-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  protectTerm = t;
+  calcProtect();
+}
+function calcProtect(){
+  const monthly = parseFloat(document.getElementById('pMonthly').value) || 0;
+  const totals = {5: monthly*60, 7: monthly*84, 10: monthly*120};
+  const totalSel = totals[protectTerm];
+  document.getElementById('pTotalLabel').textContent = `${protectTerm}년시점 총납입금액`;
+  document.getElementById('pTotalSel').textContent = fmt(totalSel);
+
+  const r10 = parseFloat(document.getElementById('pRate10').value) || 0;
+  const r20 = parseFloat(document.getElementById('pRate20').value) || 0;
+  const refund10 = totalSel * (r10/100);
+  const refund20 = totalSel * (r20/100);
+  document.getElementById('pRefund10').textContent = fmt(refund10);
+  document.getElementById('pRefund20').textContent = fmt(refund20);
+
+  const fxComplete = parseFloat(document.getElementById('pFxComplete').value) || 0;
+  const fx10 = parseFloat(document.getElementById('pFx10').value) || 0;
+  const fx20 = parseFloat(document.getElementById('pFx20').value) || 0;
+  document.getElementById('pTotalKRW').textContent = fxComplete>0 ? `≈ ${fmtKRW(totalSel*fxComplete)}` : '환율 입력 시 원화 환산 표시';
+  document.getElementById('pRefund10KRW').textContent = fx10>0 ? `≈ ${fmtKRW(refund10*fx10)}` : '환율 입력 시 원화 환산 표시';
+  document.getElementById('pRefund20KRW').textContent = fx20>0 ? `≈ ${fmtKRW(refund20*fx20)}` : '환율 입력 시 원화 환산 표시';
+
+  const maxV = Math.max(totalSel, refund10, 1);
+  document.getElementById('pBarPrincipal').style.height = (totalSel/maxV*140)+'px';
+  document.getElementById('pBarFuture').style.height = (refund10/maxV*140)+'px';
+  document.getElementById('pBarPrincipalVal').textContent = fmt(totalSel);
+  document.getElementById('pBarFutureVal').textContent = fmt(refund10);
+}
+
+/* ---------------- 연금 · 금리형 ---------------- */
+function setRateMode(mode){
+  rateMode = mode;
+  document.getElementById('rateModeLump').classList.toggle('active', mode==='lump');
+  document.getElementById('rateModeMonthly').classList.toggle('active', mode==='monthly');
+  document.getElementById('rateLumpBlock').style.display = mode==='lump' ? 'block':'none';
+  document.getElementById('rateMonthlyBlock').style.display = mode==='monthly' ? 'block':'none';
+}
+function calcRateLump(){
+  const amt = parseFloat(document.getElementById('rLumpAmt').value) || 0;
+  const feeRate = parseFloat(document.getElementById('rLumpFee').value) || 0;
+  const rate = parseFloat(document.getElementById('rLumpRate').value) || 0;
+  const years = parseFloat(document.getElementById('rLumpYears').value) || 0;
+  const fee = amt * (feeRate/100);
+  const net = amt - fee;
+  const fv = net * Math.pow(1 + rate/100, years);
+  document.getElementById('rLumpFeeAmt').textContent = fmt(fee);
+  document.getElementById('rLumpNet').textContent = fmt(net);
+  document.getElementById('rLumpFV').textContent = fmt(fv);
+
+  const fxNet = parseFloat(document.getElementById('rLumpFxNet').value) || 0;
+  const fxFV = parseFloat(document.getElementById('rLumpFxFV').value) || 0;
+  document.getElementById('rLumpNetKRW').textContent = fxNet>0 ? `≈ ${fmtKRW(net*fxNet)}` : '환율 입력 시 원화 환산 표시';
+  document.getElementById('rLumpFVKRW').textContent = fxFV>0 ? `≈ ${fmtKRW(fv*fxFV)}` : '환율 입력 시 원화 환산 표시';
+
+  const maxV = Math.max(net, fv, 1);
+  document.getElementById('rLumpBarP').style.height = (net/maxV*140)+'px';
+  document.getElementById('rLumpBarF').style.height = (fv/maxV*140)+'px';
+  document.getElementById('rLumpBarPVal').textContent = fmt(net);
+  document.getElementById('rLumpBarFVal').textContent = fmt(fv);
+}
+function calcRateMonthly(){
+  const pmt = parseFloat(document.getElementById('rMonAmt').value) || 0;
+  const feeRate = parseFloat(document.getElementById('rMonFee').value) || 0;
+  const rate = parseFloat(document.getElementById('rMonRate').value) || 0;
+  const years = parseFloat(document.getElementById('rMonYears').value) || 0;
+  const n = years*12;
+  const netMonthly = pmt - (pmt * (feeRate/100));
+  const total = pmt*n;
+  const feeAmt = pmt * (feeRate/100);
+  const netTotal = netMonthly * n;
+  const i = (rate/100)/12;
+  let fv;
+  if(i>0){
+    fv = netMonthly * ((Math.pow(1+i,n)-1)/i) * (1+i);
+  } else {
+    fv = netTotal;
+  }
+  document.getElementById('rMonTotal').textContent = fmt(total);
+  document.getElementById('rMonFeeAmt').textContent = fmt(feeAmt);
+  document.getElementById('rMonNetTotal').textContent = fmt(netTotal);
+  document.getElementById('rMonFV').textContent = fmt(fv);
+
+  const fxNet = parseFloat(document.getElementById('rMonFxNet').value) || 0;
+  const fxFV = parseFloat(document.getElementById('rMonFxFV').value) || 0;
+  document.getElementById('rMonNetKRW').textContent = fxNet>0 ? `≈ ${fmtKRW(netTotal*fxNet)}` : '환율 입력 시 원화 환산 표시';
+  document.getElementById('rMonFVKRW').textContent = fxFV>0 ? `≈ ${fmtKRW(fv*fxFV)}` : '환율 입력 시 원화 환산 표시';
+
+  const maxV = Math.max(netTotal, fv, 1);
+  document.getElementById('rMonBarP').style.height = (netTotal/maxV*140)+'px';
+  document.getElementById('rMonBarF').style.height = (fv/maxV*140)+'px';
+  document.getElementById('rMonBarPVal').textContent = fmt(netTotal);
+  document.getElementById('rMonBarFVal').textContent = fmt(fv);
+}
+
+/* ---------------- 연금 · 펀드형 ---------------- */
+function setFundType(type){
+  fundType = type;
+  document.getElementById('fundTypeStock').classList.toggle('active', type==='stock');
+  document.getElementById('fundTypeBond').classList.toggle('active', type==='bond');
+  document.getElementById('fLumpRate').value = fundDefaults[type];
+  document.getElementById('fMonRate').value = fundDefaults[type];
+  calcFund();
+}
+function setFundMode(mode){
+  fundMode = mode;
+  document.getElementById('fundModeLump').classList.toggle('active', mode==='lump');
+  document.getElementById('fundModeMonthly').classList.toggle('active', mode==='monthly');
+  document.getElementById('fundLumpBlock').style.display = mode==='lump' ? 'block':'none';
+  document.getElementById('fundMonthlyBlock').style.display = mode==='monthly' ? 'block':'none';
+  calcFund();
+}
+function calcFund(){
+  let total=0, fv=0;
+  if(fundMode==='lump'){
+    const amt = parseFloat(document.getElementById('fLumpAmt').value) || 0;
+    const rate = parseFloat(document.getElementById('fLumpRate').value) || 0;
+    const years = parseFloat(document.getElementById('fLumpYears').value) || 0;
+    fv = amt * Math.pow(1+rate/100, years);
+    total = amt;
+  } else {
+    const pmt = parseFloat(document.getElementById('fMonAmt').value) || 0;
+    const rate = parseFloat(document.getElementById('fMonRate').value) || 0;
+    const years = parseFloat(document.getElementById('fMonYears').value) || 0;
+    const n = years*12, i=(rate/100)/12;
+    fv = i>0 ? pmt*((Math.pow(1+i,n)-1)/i)*(1+i) : pmt*n;
+    total = pmt*n;
+  }
+  const cum = total>0 ? ((fv/total)-1)*100 : 0;
+  document.getElementById('fTotal').textContent = fmt(total);
+  document.getElementById('fCum').textContent = pct(cum);
+  document.getElementById('fFV').textContent = fmt(fv);
+
+  const fxTotal = parseFloat(document.getElementById('fFxTotal').value) || 0;
+  const fxFV = parseFloat(document.getElementById('fFxFV').value) || 0;
+  document.getElementById('fTotalKRW').textContent = fxTotal>0 ? `≈ ${fmtKRW(total*fxTotal)}` : '환율 입력 시 원화 환산 표시';
+  document.getElementById('fFVKRW').textContent = fxFV>0 ? `≈ ${fmtKRW(fv*fxFV)}` : '환율 입력 시 원화 환산 표시';
+
+  const maxV = Math.max(total, fv, 1);
+  document.getElementById('fBarP').style.height = (total/maxV*140)+'px';
+  document.getElementById('fBarF').style.height = (fv/maxV*140)+'px';
+  document.getElementById('fBarPVal').textContent = fmt(total);
+  document.getElementById('fBarFVal').textContent = fmt(fv);
+}
+
+/* init */
+calcProtect(); calcRateLump(); calcRateMonthly(); calcFund();
+
+/* ---------------- PWA: service worker + install prompt ---------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').classList.add('show');
+});
+function triggerInstall(){
+  const btn = document.getElementById('installBtn');
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.finally(() => {
+      deferredInstallPrompt = null;
+      btn.classList.remove('show');
+    });
+  } else {
+    alert('iOS Safari에서는 하단 [공유] 버튼 → "홈 화면에 추가"로 앱을 설치할 수 있습니다.');
+  }
+}
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').classList.remove('show');
+});
+</script>
+</body>
+</html>
