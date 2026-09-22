@@ -24,6 +24,7 @@ create table if not exists profiles (
 alter table profiles enable row level security;
 
 -- 본인 프로필(상태 포함)만 조회 가능 — 로그인 후 "승인됐는지" 확인할 때 사용
+drop policy if exists "profiles_select_own" on profiles;
 create policy "profiles_select_own" on profiles
   for select using (auth.uid() = id);
 
