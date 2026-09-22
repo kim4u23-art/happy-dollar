@@ -1860,13 +1860,15 @@ function openStorybook(){
    - SUPABASE_URL / SUPABASE_ANON_KEY: Supabase 프로젝트 설정 → API
    - BANK_INFO: 입금받을 계좌 정보와 가격
    ================================================================== */
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-SUPABASE-ANON-KEY';
+const SUPABASE_URL = 'https://eckwgcxzsgyzkebtcdud.supabase.co/rest/v1/
+';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVja3dnY3h6c2d5emtlYnRjZHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNjM2NDAsImV4cCI6MjEwNTYzOTY0MH0.cRZbd8WmzcwZvILPPL2kPRWifRck8ze2L1gIm7vMaBc
+';
 const BANK_INFO = {
-  bankName: 'OO은행',
-  bankAccount: '000-000000-00-000',
-  bankHolder: '홍길동',
-  amount: 99000,
+  bankName: 'NH투자증권',
+  bankAccount: '200-01-347907',
+  bankHolder: '김병태',
+  amount: 100000,
 };
 
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
