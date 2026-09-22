@@ -1,4 +1,4 @@
-const CACHE = 'dollar-asset-builder-v15';
+const CACHE = 'dollar-asset-builder-v18';
 const ASSETS = [
   './',
   './index.html',
